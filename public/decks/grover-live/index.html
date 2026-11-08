@@ -33,14 +33,13 @@ body{
 @keyframes rise{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
 .search-space-visual{ display:block; width:100%; height:auto; margin-top:auto; overflow:visible; }
 .complexity-chart-card{ flex-shrink:0; overflow:hidden; }
-.gb-live{ display:flex; flex-direction:column; gap:8px; margin:2px 0; }
-.gb-item{ display:flex; flex-direction:column; gap:5px; }
-.gb-item-label{ font-family:'IBM Plex Mono',monospace; font-size:clamp(11px,1vw,13px); color:#F0DCDE; }
-.gb-bar{ height:18px; border-radius:999px; background:rgba(255,255,255,.14); overflow:hidden; position:relative; }
-.gb-fill{ height:100%; border-radius:999px; transition:width .15s linear; }
-.gb-bar.classical .gb-fill{ background:#fffaf3; }
-.gb-bar.grover .gb-fill{ background:#f2c94c; }
-.gb-val{ align-self:flex-end; font-family:'IBM Plex Mono',monospace; font-size:clamp(12px,1.1vw,15px); font-weight:700; color:#fff; }
+.complexity-chart{ display:block; width:100%; height:auto; max-height:135px; margin:2px 0; }
+#gbN-guide, #gbN-dot-classical, #gbN-dot-grover{ transition:all .08s linear; }
+.gb-readout{ display:flex; justify-content:space-between; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:clamp(11px,1.1vw,14px); color:#fff; }
+.gb-readout b{ font-weight:700; }
+.prob-tile.gb-speedup-tile{ background:rgba(255,255,255,.14); padding:8px 16px; gap:0; }
+.prob-tile.gb-speedup-tile .k{ color:#F0DCDE; }
+.prob-tile.gb-speedup-tile .v{ color:#fff; }
 .target-halo{ transform-box:fill-box; transform-origin:center; animation:target-pulse 2.2s ease-out infinite; }
 @keyframes target-pulse{ 0%{transform:scale(.78);opacity:.8} 75%,100%{transform:scale(1.5);opacity:0} }
 @media (prefers-reduced-motion: reduce){ .target-halo{ animation:none; opacity:.45 } }
@@ -247,24 +246,28 @@ button.playbtn:hover{ filter:brightness(1.08); }
     </div>
     <div class="card fill-maroon complexity-chart-card" style="flex:1.15 0 auto;">
       <h3>Quadratic Speedup</h3>
+      <svg class="complexity-chart" viewBox="0 0 390 190" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="complexity-title complexity-desc">
+        <title id="complexity-title">Classical and Grover query growth by search-space size</title>
+        <desc id="complexity-desc">A log-log chart with N on the x-axis and query count on the y-axis. Classical O(N) rises steeply; Grover O(root N) rises at half the slope. A slider moves a marker along both curves to the chosen N.</desc>
+        <g fill="none" stroke="#f0dcde" stroke-opacity=".42" stroke-width="1"><path d="M48 156H360M48 90H360M48 24H360" /><path d="M48 18V162" stroke-opacity=".7" /></g>
+        <g fill="#f0dcde" font-size="10" font-family="IBM Plex Mono,monospace"><text x="42" y="160" text-anchor="end">1</text><text x="42" y="94" text-anchor="end">10³</text><text x="42" y="28" text-anchor="end">10⁶</text><text x="55" y="174" text-anchor="middle">4</text><text x="129" y="174" text-anchor="middle">100</text><text x="234" y="174" text-anchor="middle">10⁴</text><text x="340" y="174" text-anchor="middle">10⁶</text></g>
+        <text x="205" y="186" text-anchor="middle" fill="#f0dcde" font-size="10">Search-space size N · log scale</text>
+        <path d="M55 142.7 L129 112 L234 68 L340 24" fill="none" stroke="#fffaf3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M55 149.4 L129 134 L234 112 L340 90" fill="none" stroke="#f2c94c" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+        <g font-size="10" font-weight="700"><text x="248" y="58" fill="#fffaf3">Classical O(N)</text><text x="247" y="106" fill="#f2c94c">Grover O(√N)</text></g>
+        <line id="gbN-guide" x1="55" y1="18" x2="55" y2="162" stroke="#fff" stroke-opacity=".55" stroke-width="1" stroke-dasharray="3 3" />
+        <circle id="gbN-dot-classical" cx="55" cy="142.7" r="5" fill="#fffaf3" stroke="#4A0F15" stroke-width="1.5" />
+        <circle id="gbN-dot-grover" cx="55" cy="149.4" r="5" fill="#f2c94c" stroke="#4A0F15" stroke-width="1.5" />
+      </svg>
       <div class="ctrl-row"><span class="ctrl-label" style="color:#F0DCDE;">Search-space size, N</span><span class="ctrl-value" id="gbN-val" style="color:#fff;">4</span></div>
       <input type="range" id="gbN-slider" min="0.60206" max="6" step="0.001" value="0.60206">
-      <div class="ticks" style="color:#F0DCDE;"><span>4</span><span>1,000</span><span>1,000,000</span></div>
-      <div class="gb-live">
-        <div class="gb-item">
-          <span class="gb-item-label">Classical, O(N)</span>
-          <div class="gb-bar classical"><div class="gb-fill" id="gbN-classical-fill" style="width:10.03%;"></div></div>
-          <span class="gb-val" id="gbN-classical-val">4</span>
-        </div>
-        <div class="gb-item">
-          <span class="gb-item-label">Grover, O(√N)</span>
-          <div class="gb-bar grover"><div class="gb-fill" id="gbN-grover-fill" style="width:5.02%;"></div></div>
-          <span class="gb-val" id="gbN-grover-val">2</span>
-        </div>
+      <div class="gb-readout">
+        <span>Classical: <b id="gbN-classical-val">4</b></span>
+        <span>Grover: <b id="gbN-grover-val">2</b></span>
       </div>
-      <div class="prob-tile" style="background:rgba(255,255,255,.12);">
-        <span class="k" style="color:#F0DCDE;">Grover needs this many fewer queries</span>
-        <span class="v" id="gbN-speedup" style="color:#fff;">2×</span>
+      <div class="prob-tile gb-speedup-tile">
+        <span class="k">Grover needs this many fewer queries</span>
+        <span class="v" id="gbN-speedup">2×</span>
       </div>
     </div>
   </div>
@@ -864,23 +867,29 @@ qc.h([0, 1])  <span class="cm"># initialize</span></pre></div>
   fsBtn.addEventListener('click', toggleFullscreen);
   go(0);
 
-  /* ---------- Slide 3: live classical-vs-Grover bar comparison, driven by an N slider ---------- */
+  /* ---------- Slide 3: live classical-vs-Grover chart, a marker moves along both curves as N changes ---------- */
   (function(){
     var slider = document.getElementById('gbN-slider');
     if (!slider) return;
     var nVal = document.getElementById('gbN-val');
-    var classicalFill = document.getElementById('gbN-classical-fill');
-    var groverFill = document.getElementById('gbN-grover-fill');
     var classicalVal = document.getElementById('gbN-classical-val');
     var groverVal = document.getElementById('gbN-grover-val');
     var speedup = document.getElementById('gbN-speedup');
+    var guide = document.getElementById('gbN-guide');
+    var dotC = document.getElementById('gbN-dot-classical');
+    var dotG = document.getElementById('gbN-dot-grover');
+    var LOG_MIN = 0.60206, LOG_MAX = 6, X0 = 55, X1 = 340, Y0 = 156;
     function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
     function render(){
       var logN = parseFloat(slider.value);
       var n = Math.pow(10, logN);
       var sqrtN = Math.sqrt(n);
-      classicalFill.style.width = (logN / 6 * 100).toFixed(2) + '%';
-      groverFill.style.width = (logN / 2 / 6 * 100).toFixed(2) + '%';
+      var x = X0 + (logN - LOG_MIN) / (LOG_MAX - LOG_MIN) * (X1 - X0);
+      var yC = Y0 - logN * 22;
+      var yG = Y0 - logN * 11;
+      guide.setAttribute('x1', x.toFixed(1)); guide.setAttribute('x2', x.toFixed(1));
+      dotC.setAttribute('cx', x.toFixed(1)); dotC.setAttribute('cy', yC.toFixed(1));
+      dotG.setAttribute('cx', x.toFixed(1)); dotG.setAttribute('cy', yG.toFixed(1));
       nVal.textContent = fmt(n);
       classicalVal.textContent = fmt(n);
       groverVal.textContent = fmt(sqrtN);
