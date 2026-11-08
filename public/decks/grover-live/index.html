@@ -24,15 +24,16 @@ body{
 #deck{ position:relative; width:100%; height:100%; }
 .slide{
   position:absolute; inset:0; display:none; flex-direction:column;
-  padding:clamp(20px,4vw,72px) clamp(16px,6vw,96px) clamp(60px,6vw,88px);
-  gap:clamp(14px,2vw,28px); overflow:auto;
+  padding:clamp(16px,3vw,52px) clamp(16px,6vw,96px) clamp(44px,5vw,64px);
+  gap:clamp(10px,1.6vw,20px); overflow:auto; scrollbar-width:none;
 }
+.slide::-webkit-scrollbar{ display:none; }
 .slide.active{ display:flex; animation:rise .35s ease both; }
 @media (prefers-reduced-motion: reduce){ .slide.active{ animation:none } }
 @keyframes rise{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
 .search-space-visual{ display:block; width:100%; height:auto; margin-top:auto; overflow:visible; }
 .complexity-chart-card{ flex-shrink:0; overflow:hidden; }
-.gb-live{ display:flex; flex-direction:column; gap:12px; margin:6px 0 2px; }
+.gb-live{ display:flex; flex-direction:column; gap:8px; margin:2px 0; }
 .gb-item{ display:flex; flex-direction:column; gap:5px; }
 .gb-item-label{ font-family:'IBM Plex Mono',monospace; font-size:clamp(11px,1vw,13px); color:#F0DCDE; }
 .gb-bar{ height:18px; border-radius:999px; background:rgba(255,255,255,.14); overflow:hidden; position:relative; }
@@ -69,7 +70,7 @@ p.section-tag{ font-size:clamp(10px,1vw,13px); font-weight:700; letter-spacing:.
 
 .card{
   background:var(--surface); border:1px solid var(--ring); border-radius:18px;
-  padding:clamp(16px,2vw,32px); display:flex; flex-direction:column; gap:12px;
+  padding:clamp(14px,1.6vw,26px); display:flex; flex-direction:column; gap:10px;
   box-shadow:0 1px 2px rgba(0,0,0,.04);
 }
 .dark .card{ background:var(--surface-dark-2); border-color:var(--ring-dark); }
@@ -246,7 +247,6 @@ button.playbtn:hover{ filter:brightness(1.08); }
     </div>
     <div class="card fill-maroon complexity-chart-card" style="flex:1.15 0 auto;">
       <h3>Quadratic Speedup</h3>
-      <p>Both methods take more work as N grows—but Grover grows much more slowly.</p>
       <div class="ctrl-row"><span class="ctrl-label" style="color:#F0DCDE;">Search-space size, N</span><span class="ctrl-value" id="gbN-val" style="color:#fff;">4</span></div>
       <input type="range" id="gbN-slider" min="0.60206" max="6" step="0.001" value="0.60206">
       <div class="ticks" style="color:#F0DCDE;"><span>4</span><span>1,000</span><span>1,000,000</span></div>
@@ -268,7 +268,7 @@ button.playbtn:hover{ filter:brightness(1.08); }
       </div>
     </div>
   </div>
-  <p class="lede">The chart uses logarithmic axes so both rising trends fit. Grover gives a quadratic query speedup—not an exponential one.</p>
+  <p class="lede">A quadratic speedup—not an exponential one.</p>
 </section>
 
 <!-- 4 -->

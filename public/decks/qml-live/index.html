@@ -26,9 +26,10 @@ body{
 #deck{ position:relative; width:100%; height:100%; }
 .slide{
   position:absolute; inset:0; display:none; flex-direction:column;
-  padding:clamp(20px,4vw,72px) clamp(16px,6vw,96px) clamp(60px,6vw,88px);
-  gap:clamp(14px,2vw,28px); overflow:auto;
+  padding:clamp(16px,3vw,52px) clamp(16px,6vw,96px) clamp(44px,5vw,64px);
+  gap:clamp(10px,1.6vw,20px); overflow:auto; scrollbar-width:none;
 }
+.slide::-webkit-scrollbar{ display:none; }
 .slide.active{ display:flex; animation:rise .35s ease both; }
 @media (prefers-reduced-motion: reduce){ .slide.active{ animation:none } }
 @keyframes rise{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
@@ -46,20 +47,20 @@ p.lede{ font-size:clamp(14px,1.5vw,22px); line-height:1.5; color:var(--ink-soft)
 
 .row{ display:flex; gap:clamp(16px,2.2vw,40px); flex:1 1 auto; min-height:0; }
 .row.center{ align-items:center; justify-content:center; }
-.col{ flex:1; display:flex; flex-direction:column; gap:14px; min-width:0; }
+.col{ flex:1; display:flex; flex-direction:column; gap:10px; min-width:0; }
 
 .card{
   background:var(--surface); border:1px solid var(--ring); border-radius:20px;
-  padding:clamp(18px,2.4vw,40px); display:flex; flex-direction:column; gap:14px;
+  padding:clamp(14px,1.8vw,30px); display:flex; flex-direction:column; gap:11px;
   box-shadow:0 1px 2px rgba(0,0,0,.04);
 }
 .dark .card{ background:var(--surface-dark-2); border-color:var(--ring-dark); }
 .card.fill-maroon{ background:var(--maroon-fixed); color:#fff; border-color:transparent; }
 .card.fill-maroon h3, .card.fill-maroon b{ color:#fff; }
 .card.fill-maroon p, .card.fill-maroon ul, .card.fill-maroon li{ color:#fff; }
-.card h3{ font-size:clamp(16px,1.6vw,24px); font-weight:700; color:var(--maroon); margin:0; }
+.card h3{ font-size:clamp(14px,1.4vw,21px); font-weight:700; color:var(--maroon); margin:0; }
 .dark .card h3{ color:var(--gold); }
-.card p{ font-size:clamp(13px,1.3vw,18px); line-height:1.55; color:var(--ink); margin:0; }
+.card p{ font-size:clamp(12px,1.2vw,16px); line-height:1.45; color:var(--ink); margin:0; }
 .dark .card p{ color:var(--ink-on-dark); }
 .card ul{ margin:0; padding-left:1.1em; font-size:clamp(13px,1.3vw,18px); line-height:1.7; color:var(--ink); }
 .dark .card ul{ color:var(--ink-on-dark); }
@@ -75,7 +76,7 @@ b.accent{ color:var(--maroon); }
 
 /* Pipeline row — steps are buttons the viewer clicks to drive what the stage panel shows */
 .pipeline{ display:flex; align-items:stretch; gap:10px; flex-wrap:nowrap; }
-.pstep{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; background:var(--surface); border:1px solid var(--ring); border-radius:14px; padding:14px 8px; text-align:center; transition:background .2s, color .2s, transform .2s, border-color .2s; font:inherit; cursor:pointer; }
+.pstep{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:var(--surface); border:1px solid var(--ring); border-radius:14px; padding:9px 8px; text-align:center; transition:background .2s, color .2s, transform .2s, border-color .2s; font:inherit; cursor:pointer; }
 .pstep:hover{ border-color:var(--maroon-fixed); transform:translateY(-2px); }
 .pstep .n{ font-size:clamp(14px,1.6vw,22px); font-weight:700; color:var(--maroon); }
 .pstep .t{ font-size:clamp(10px,1vw,14px); font-weight:600; }
@@ -92,7 +93,7 @@ b.accent{ color:var(--maroon); }
 .parrow{ display:flex; align-items:center; color:var(--gold-deep); font-size:20px; flex:0 0 auto; }
 
 /* Stage panel — the per-stage demo revealed under a pipeline when its step is clicked */
-.stage-panel{ position:relative; min-height:0; }
+.stage-panel{ position:relative; min-height:auto; flex-shrink:0; overflow:hidden; }
 .stage-view{ display:none; }
 .stage-view.shown{ display:flex; flex-direction:column; gap:12px; animation:rise .3s ease both; }
 .stage-dot-row{ display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
@@ -112,7 +113,7 @@ input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:n
 input[type="range"]::-moz-range-thumb{ width:16px; height:16px; border-radius:50%; background:var(--maroon); border:4px solid var(--surface); cursor:pointer; }
 .ticks{ display:flex; justify-content:space-between; font-size:clamp(10px,.9vw,12px); color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; }
 
-.bar-track{ height:10px; border-radius:999px; background:var(--surface-2); overflow:hidden; }
+.bar-track{ height:8px; border-radius:999px; background:var(--surface-2); overflow:hidden; }
 .dark .bar-track{ background:var(--surface-dark); }
 .bar-fill{ height:100%; border-radius:999px; transition:width .08s linear; }
 
@@ -203,7 +204,7 @@ button.playbtn:hover{ filter:brightness(1.08); }
 <section class="slide light" id="s-bigpicture">
   <p class="eyebrow">The Big Picture</p>
   <h1 class="title">QML Is Just a Pipeline</h1>
-  <div class="card"><p><b class="accent">If you can understand a pipeline, you can understand QML.</b> Data flows through a series of transformations — just like plumbing. Each stage below opens into what actually happens there.</p></div>
+  <div class="card" style="padding:12px 18px;"><p><b class="accent">If you can understand a pipeline, you can understand QML</b> — data flows through a series of transformations, like plumbing.</p></div>
   <div class="pipeline" id="pipe-big">
     <button class="pstep" data-stage="dataset"><div class="n">1</div><div class="t">Dataset</div></button>
     <div class="parrow">→</div>
@@ -224,7 +225,7 @@ button.playbtn:hover{ filter:brightness(1.08); }
     <div class="stage-view" data-view="dataset">
       <h3>1 · Dataset — Raw Labeled Examples</h3>
       <div class="row center">
-        <svg viewBox="0 0 420 220" style="width:100%; max-width:420px; height:auto;" id="sv-dataset"></svg>
+        <svg viewBox="0 0 420 220" style="width:100%; max-width:300px; height:auto;" id="sv-dataset"></svg>
       </div>
       <p class="hint">A small labeled dataset — two classes, two numeric features (e.g. petal length &amp; width).</p>
       <button class="playbtn" id="sv-dataset-reroll">⟲ New sample</button>
@@ -453,24 +454,22 @@ button.playbtn:hover{ filter:brightness(1.08); }
       <div class="card">
         <h3>Building the State, Gate by Gate</h3>
         <p>Each gate applies independently, in either order, to the real 2-qubit state vector on the right.</p>
-        <label style="display:flex; align-items:center; gap:10px; font-weight:600; cursor:pointer;"><input type="checkbox" id="zz-toggle-h" style="width:20px; height:20px;" checked> Apply H⊗H (superposition)</label>
-        <label style="display:flex; align-items:center; gap:10px; font-weight:600; cursor:pointer;"><input type="checkbox" id="zz-toggle-zz" style="width:20px; height:20px;" checked> Apply the ZZ interaction (phase)</label>
+        <label style="display:flex; align-items:center; gap:8px; font-weight:600; font-size:clamp(12px,1.2vw,15px); cursor:pointer;"><input type="checkbox" id="zz-toggle-h" style="width:16px; height:16px; flex:0 0 auto;" checked> Apply H⊗H (superposition)</label>
+        <label style="display:flex; align-items:center; gap:8px; font-weight:600; font-size:clamp(12px,1.2vw,15px); cursor:pointer;"><input type="checkbox" id="zz-toggle-zz" style="width:16px; height:16px; flex:0 0 auto;" checked> Apply the ZZ interaction (phase)</label>
         <p class="muted" id="zz-step">Both gates on — equal superposition with the ZZ phase pattern applied.</p>
-      </div>
-      <div class="card">
-        <p class="mono" id="zz-state" style="font-size:16px; line-height:1.8;">ψ⟩ = 1.00∣00⟩</p>
+        <p class="mono" id="zz-state" style="font-size:clamp(13px,1.3vw,16px); line-height:1.4; margin:0;">ψ⟩ = 1.00∣00⟩</p>
       </div>
     </div>
     <div class="col">
       <div class="card" style="flex:1;">
-        <h3>Amplitude by Basis State</h3>
-        <div id="zz-bars" style="display:flex; flex-direction:column; gap:10px; margin-top:6px;"></div>
-        <p class="muted" style="margin-top:10px;">Bar color: gold = positive phase, maroon = negative phase (the +1/−1 eigenvalue the ZZ gate applies). With H⊗H unchecked, the ZZ phase alone does nothing to ∣00⟩, since it's already a +1 eigenstate.</p>
+        <h3 style="font-size:clamp(13px,1.3vw,18px);">Amplitude by Basis State</h3>
+        <div id="zz-bars" style="display:flex; flex-direction:column; gap:3px;"></div>
+        <p class="muted" style="margin:0;">Gold = positive phase, maroon = negative. Unchecking H⊗H leaves ∣00⟩ unchanged.</p>
       </div>
-      <div class="card">
-        <h3>The Single-Qubit Side of the Encoding</h3>
-        <p class="serif-eq" style="font-size:clamp(18px,2vw,24px); text-align:center;">R_z(x) = e^(−ix·Z/2)</p>
-        <p class="muted">The same Pauli-Z rotation also appears alone, encoding one feature per qubit — the exact ½-factor is a convention, and differs slightly between references.</p>
+      <div class="card" style="padding:10px 16px; gap:6px;">
+        <h3 style="font-size:clamp(13px,1.3vw,18px);">The Single-Qubit Side of the Encoding</h3>
+        <p class="serif-eq" style="font-size:clamp(14px,1.5vw,18px); text-align:center; margin:0;">R_z(x) = e^(−ix·Z/2)</p>
+        <p class="muted" style="margin:0;">The same rotation also appears alone — the ½-factor is just a convention.</p>
       </div>
     </div>
   </div>
@@ -608,12 +607,12 @@ button.playbtn:hover{ filter:brightness(1.08); }
   <h1 class="title">Training: The Classical Optimization Loop</h1>
   <p class="lede">Step 5 feeds back into step 1 — this is a loop, not a line.</p>
   <div class="card" style="flex:1;">
-    <div id="loop-steps" style="display:flex; flex-direction:column; gap:16px; flex:1; justify-content:center;">
-      <button class="loop-step" data-i="0" style="display:flex; align-items:center; gap:20px; padding:10px; border-radius:12px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">1</span><span style="margin:0; font-size:clamp(14px,1.5vw,19px);">Encode a training example with the feature map; apply the ansatz with its current parameters</span></button>
-      <button class="loop-step" data-i="1" style="display:flex; align-items:center; gap:20px; padding:10px; border-radius:12px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">2</span><span style="margin:0; font-size:clamp(14px,1.5vw,19px);">Measure the circuit (many shots); convert the outcome distribution into a predicted label</span></button>
-      <button class="loop-step" data-i="2" style="display:flex; align-items:center; gap:20px; padding:10px; border-radius:12px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">3</span><span style="margin:0; font-size:clamp(14px,1.5vw,19px);">Compute the loss between the prediction and the true label</span></button>
-      <button class="loop-step" data-i="3" style="display:flex; align-items:center; gap:20px; padding:10px; border-radius:12px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">4</span><span style="margin:0; font-size:clamp(14px,1.5vw,19px);">A classical optimizer (COBYLA) proposes new parameter values to reduce the loss</span></button>
-      <button class="loop-step" data-i="4" style="display:flex; align-items:center; gap:20px; padding:10px; border-radius:12px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">5</span><span style="margin:0; font-size:clamp(14px,1.5vw,19px);">Repeat over the training set until the loss stops improving — then loop back to step 1</span></button>
+    <div id="loop-steps" style="display:flex; flex-direction:column; gap:8px; flex:1; justify-content:center;">
+      <button class="loop-step" data-i="0" style="display:flex; align-items:center; gap:14px; padding:6px; border-radius:10px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:34px;height:34px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">1</span><span style="margin:0; font-size:clamp(12.5px,1.3vw,16px); line-height:1.35;">Encode a training example with the feature map; apply the ansatz with its current parameters</span></button>
+      <button class="loop-step" data-i="1" style="display:flex; align-items:center; gap:14px; padding:6px; border-radius:10px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:34px;height:34px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">2</span><span style="margin:0; font-size:clamp(12.5px,1.3vw,16px); line-height:1.35;">Measure the circuit (many shots); convert the outcome distribution into a predicted label</span></button>
+      <button class="loop-step" data-i="2" style="display:flex; align-items:center; gap:14px; padding:6px; border-radius:10px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:34px;height:34px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">3</span><span style="margin:0; font-size:clamp(12.5px,1.3vw,16px); line-height:1.35;">Compute the loss between the prediction and the true label</span></button>
+      <button class="loop-step" data-i="3" style="display:flex; align-items:center; gap:14px; padding:6px; border-radius:10px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:34px;height:34px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">4</span><span style="margin:0; font-size:clamp(12.5px,1.3vw,16px); line-height:1.35;">A classical optimizer (COBYLA) proposes new parameter values to reduce the loss</span></button>
+      <button class="loop-step" data-i="4" style="display:flex; align-items:center; gap:14px; padding:6px; border-radius:10px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:34px;height:34px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">5</span><span style="margin:0; font-size:clamp(12.5px,1.3vw,16px); line-height:1.35;">Repeat over the training set until the loss stops improving — then loop back to step 1</span></button>
     </div>
   </div>
 </section>
