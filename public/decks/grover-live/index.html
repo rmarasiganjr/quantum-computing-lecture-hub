@@ -32,23 +32,14 @@ body{
 @keyframes rise{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
 .search-space-visual{ display:block; width:100%; height:auto; margin-top:auto; overflow:visible; }
 .complexity-chart-card{ flex-shrink:0; overflow:hidden; }
-.growth-bars{ display:flex; flex-direction:column; gap:14px; flex:1 1 auto; justify-content:center; margin:4px 0; }
-.gb-row{ display:flex; align-items:center; gap:12px; }
-.gb-n{ flex:0 0 76px; font-family:'IBM Plex Mono',monospace; font-size:clamp(11px,1vw,13px); color:#F0DCDE; text-align:right; }
-.gb-pair{ flex:1; display:flex; flex-direction:column; gap:5px; min-width:0; }
-.gb-item{ display:flex; align-items:center; gap:10px; }
-.gb-bar{ flex:1; height:14px; border-radius:999px; background:rgba(255,255,255,.14); overflow:hidden; position:relative; min-width:0; }
-.gb-bar::before{ content:""; position:absolute; inset:0; width:0%; border-radius:999px; transition:width 1s cubic-bezier(.2,.8,.2,1); transition-delay:var(--d,0s); }
-.slide.active .gb-bar::before{ width:var(--w); }
-.gb-bar.classical::before{ background:#fffaf3; }
-.gb-bar.grover::before{ background:#f2c94c; }
-.gb-val{ flex:0 0 76px; font-family:'IBM Plex Mono',monospace; font-size:clamp(11px,1vw,13px); font-weight:700; color:#fff; }
-.gb-legend{ display:flex; gap:18px; justify-content:center; font-size:clamp(11px,1vw,13px); color:#F0DCDE; }
-.gb-legend span{ display:inline-flex; align-items:center; gap:6px; }
-.gb-swatch{ width:10px; height:10px; border-radius:50%; display:inline-block; }
-.gb-swatch.classical{ background:#fffaf3; }
-.gb-swatch.grover{ background:#f2c94c; }
-@media (prefers-reduced-motion: reduce){ .gb-bar::before{ transition:none; width:var(--w); } }
+.gb-live{ display:flex; flex-direction:column; gap:12px; margin:6px 0 2px; }
+.gb-item{ display:flex; flex-direction:column; gap:5px; }
+.gb-item-label{ font-family:'IBM Plex Mono',monospace; font-size:clamp(11px,1vw,13px); color:#F0DCDE; }
+.gb-bar{ height:18px; border-radius:999px; background:rgba(255,255,255,.14); overflow:hidden; position:relative; }
+.gb-fill{ height:100%; border-radius:999px; transition:width .15s linear; }
+.gb-bar.classical .gb-fill{ background:#fffaf3; }
+.gb-bar.grover .gb-fill{ background:#f2c94c; }
+.gb-val{ align-self:flex-end; font-family:'IBM Plex Mono',monospace; font-size:clamp(12px,1.1vw,15px); font-weight:700; color:#fff; }
 .target-halo{ transform-box:fill-box; transform-origin:center; animation:target-pulse 2.2s ease-out infinite; }
 @keyframes target-pulse{ 0%{transform:scale(.78);opacity:.8} 75%,100%{transform:scale(1.5);opacity:0} }
 @media (prefers-reduced-motion: reduce){ .target-halo{ animation:none; opacity:.45 } }
@@ -256,37 +247,25 @@ button.playbtn:hover{ filter:brightness(1.08); }
     <div class="card fill-maroon complexity-chart-card" style="flex:1.15 0 auto;">
       <h3>Quadratic Speedup</h3>
       <p>Both methods take more work as N grows—but Grover grows much more slowly.</p>
-      <div class="growth-bars" role="img" aria-label="Horizontal bars comparing classical O(N) and Grover O(root N) query counts at search-space sizes 4, 100, 10 thousand, and 1 million — the Grover bar is always half as long on this logarithmic scale, since root N halves the exponent of N.">
-        <div class="gb-row">
-          <span class="gb-n">N = 4</span>
-          <div class="gb-pair">
-            <div class="gb-item"><div class="gb-bar classical" style="--w:10.0%; --d:0s;"></div><span class="gb-val">4</span></div>
-            <div class="gb-item"><div class="gb-bar grover" style="--w:5.0%; --d:0s;"></div><span class="gb-val">2</span></div>
-          </div>
+      <div class="ctrl-row"><span class="ctrl-label" style="color:#F0DCDE;">Search-space size, N</span><span class="ctrl-value" id="gbN-val" style="color:#fff;">4</span></div>
+      <input type="range" id="gbN-slider" min="0.60206" max="6" step="0.001" value="0.60206">
+      <div class="ticks" style="color:#F0DCDE;"><span>4</span><span>1,000</span><span>1,000,000</span></div>
+      <div class="gb-live">
+        <div class="gb-item">
+          <span class="gb-item-label">Classical, O(N)</span>
+          <div class="gb-bar classical"><div class="gb-fill" id="gbN-classical-fill" style="width:10.03%;"></div></div>
+          <span class="gb-val" id="gbN-classical-val">4</span>
         </div>
-        <div class="gb-row">
-          <span class="gb-n">N = 100</span>
-          <div class="gb-pair">
-            <div class="gb-item"><div class="gb-bar classical" style="--w:33.3%; --d:.15s;"></div><span class="gb-val">100</span></div>
-            <div class="gb-item"><div class="gb-bar grover" style="--w:16.7%; --d:.15s;"></div><span class="gb-val">10</span></div>
-          </div>
-        </div>
-        <div class="gb-row">
-          <span class="gb-n">N = 10⁴</span>
-          <div class="gb-pair">
-            <div class="gb-item"><div class="gb-bar classical" style="--w:66.7%; --d:.3s;"></div><span class="gb-val">10,000</span></div>
-            <div class="gb-item"><div class="gb-bar grover" style="--w:33.3%; --d:.3s;"></div><span class="gb-val">100</span></div>
-          </div>
-        </div>
-        <div class="gb-row">
-          <span class="gb-n">N = 10⁶</span>
-          <div class="gb-pair">
-            <div class="gb-item"><div class="gb-bar classical" style="--w:100%; --d:.45s;"></div><span class="gb-val">1,000,000</span></div>
-            <div class="gb-item"><div class="gb-bar grover" style="--w:50.0%; --d:.45s;"></div><span class="gb-val">1,000</span></div>
-          </div>
+        <div class="gb-item">
+          <span class="gb-item-label">Grover, O(√N)</span>
+          <div class="gb-bar grover"><div class="gb-fill" id="gbN-grover-fill" style="width:5.02%;"></div></div>
+          <span class="gb-val" id="gbN-grover-val">2</span>
         </div>
       </div>
-      <div class="gb-legend"><span><i class="gb-swatch classical"></i>Classical O(N)</span><span><i class="gb-swatch grover"></i>Grover O(√N)</span></div>
+      <div class="prob-tile" style="background:rgba(255,255,255,.12);">
+        <span class="k" style="color:#F0DCDE;">Grover needs this many fewer queries</span>
+        <span class="v" id="gbN-speedup" style="color:#fff;">2×</span>
+      </div>
     </div>
   </div>
   <p class="lede">The chart uses logarithmic axes so both rising trends fit. Grover gives a quadratic query speedup—not an exponential one.</p>
@@ -884,6 +863,32 @@ qc.h([0, 1])  <span class="cm"># initialize</span></pre></div>
   }
   fsBtn.addEventListener('click', toggleFullscreen);
   go(0);
+
+  /* ---------- Slide 3: live classical-vs-Grover bar comparison, driven by an N slider ---------- */
+  (function(){
+    var slider = document.getElementById('gbN-slider');
+    if (!slider) return;
+    var nVal = document.getElementById('gbN-val');
+    var classicalFill = document.getElementById('gbN-classical-fill');
+    var groverFill = document.getElementById('gbN-grover-fill');
+    var classicalVal = document.getElementById('gbN-classical-val');
+    var groverVal = document.getElementById('gbN-grover-val');
+    var speedup = document.getElementById('gbN-speedup');
+    function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+    function render(){
+      var logN = parseFloat(slider.value);
+      var n = Math.pow(10, logN);
+      var sqrtN = Math.sqrt(n);
+      classicalFill.style.width = (logN / 6 * 100).toFixed(2) + '%';
+      groverFill.style.width = (logN / 2 / 6 * 100).toFixed(2) + '%';
+      nVal.textContent = fmt(n);
+      classicalVal.textContent = fmt(n);
+      groverVal.textContent = fmt(sqrtN);
+      speedup.textContent = fmt(sqrtN) + '×';
+    }
+    slider.addEventListener('input', render);
+    render();
+  })();
 
   /* ---------- Interactive two-dimensional amplitude-rotation picture ---------- */
   (function(){
