@@ -96,8 +96,8 @@ b.accent{ color:var(--maroon); }
 
 .pill{ display:inline-flex; align-items:center; background:var(--gold-fixed); color:var(--maroon-deep-fixed); font-weight:700; font-size:clamp(10px,1vw,13px); letter-spacing:.08em; text-transform:uppercase; padding:5px 14px; border-radius:999px; width:fit-content; }
 
-.codecard{ background:var(--surface-dark); border-radius:16px; padding:16px 20px; overflow:auto; }
-.codecard pre{ margin:0; color:#F0E4E6; font-family:'IBM Plex Mono','Courier New',monospace; font-size:clamp(11px,1.05vw,14px); line-height:1.6; white-space:pre; }
+.codecard{ background:var(--surface-dark); border-radius:16px; padding:16px 20px; overflow:auto; flex-shrink:0; }
+.codecard pre{ margin:0; color:#F0E4E6; font-family:'IBM Plex Mono','Courier New',monospace; font-size:clamp(11px,1.05vw,14px); line-height:1.5; white-space:pre-wrap; overflow-wrap:anywhere; }
 .codecard .kw{ color:#E3C465; }
 .codecard .fn{ color:#9FD4C8; }
 .codecard .cm{ color:#8A7174; font-style:italic; }
@@ -654,11 +654,11 @@ button.playbtn:hover{ filter:brightness(1.08); }
   <p class="eyebrow">The Qiskit Environment</p>
   <h1 class="title">Mapping Theory to Qiskit</h1>
   <div class="row">
-    <div class="card" style="flex:1;">
+    <div class="card" style="flex:0.8;">
       <h3>What Qiskit Provides</h3>
       <p>Qiskit is IBM's open-source SDK for building and running quantum circuits. <b class="accent">Qiskit Aer</b> is its simulator — it runs circuits like this one exactly, with no real quantum hardware needed.</p>
     </div>
-    <div class="col" style="flex:1;">
+    <div class="col" style="flex:1.2;">
       <div class="codecard"><pre><span class="kw">from</span> qiskit <span class="kw">import</span> QuantumCircuit
 <span class="kw">from</span> qiskit.quantum_info <span class="kw">import</span> Statevector
 <span class="kw">from</span> qiskit.primitives <span class="kw">import</span> StatevectorSampler</pre></div>
