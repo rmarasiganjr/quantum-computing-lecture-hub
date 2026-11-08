@@ -1,0 +1,1228 @@
+<meta charset="utf-8">
+<title>Quantum Machine Learning</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: a fixed-viewport deck; one <section class="slide"> visible at a time,
+   crossfaded; a slim top progress bar and bottom-right nav/fullscreen chrome. */
+:root{
+  --bg:#FBF9F6; --surface:#FFFFFF; --surface-2:#F3ECE4; --surface-dark:#241013; --surface-dark-2:#2E1519;
+  --ink:#2B1A1D; --ink-soft:#6B5255; --ink-faint:#7D6164;
+  --ink-on-dark:#F6EDEE; --ink-on-dark-soft:#CBB2B5;
+  --maroon:#6A171F; --maroon-deep:#4A0F15; --gold:#C9A227; --gold-deep:#8A6B1A;
+  --maroon-fixed:#6A171F; --maroon-deep-fixed:#4A0F15; --gold-fixed:#C9A227; --gold-deep-fixed:#8A6B1A;
+  --ring:#E6DCD3; --ring-dark:#4A2A2E;
+  color-scheme:light;
+}
+/* No prefers-color-scheme/data-theme switching: this deck's look is a fixed design
+   (each slide is explicitly .light or .dark), not a theme that should follow the
+   presenter's OS setting — a projector needs to render the same way every time. */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'IBM Plex Sans', Arial, sans-serif;
+  overflow:hidden; padding:0;
+}
+#deck{ position:relative; width:100%; height:100%; }
+.slide{
+  position:absolute; inset:0; display:none; flex-direction:column;
+  padding:clamp(20px,4vw,72px) clamp(16px,6vw,96px) clamp(60px,6vw,88px);
+  gap:clamp(14px,2vw,28px); overflow:auto;
+}
+.slide.active{ display:flex; animation:rise .35s ease both; }
+@media (prefers-reduced-motion: reduce){ .slide.active{ animation:none } }
+@keyframes rise{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
+
+.slide.light{ background:var(--bg); color:var(--ink); }
+.slide.dark{ background:var(--surface-dark); color:var(--ink-on-dark); }
+
+.eyebrow{ font-size:clamp(11px,1.1vw,14px); font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-deep); margin:0; }
+.dark .eyebrow{ color:var(--gold); }
+h1.title{ font-family:'Libre Baskerville', Georgia, serif; font-weight:700; font-size:clamp(30px,4.6vw,58px); line-height:1.12; margin:0; color:var(--maroon); }
+.dark h1.title{ color:#FFFFFF; }
+h1.hero{ font-size:clamp(34px,6vw,84px); }
+p.lede{ font-size:clamp(14px,1.5vw,22px); line-height:1.5; color:var(--ink-soft); max-width:62ch; margin:0; }
+.dark p.lede{ color:var(--ink-on-dark-soft); }
+
+.row{ display:flex; gap:clamp(16px,2.2vw,40px); flex:1 1 auto; min-height:0; }
+.row.center{ align-items:center; justify-content:center; }
+.col{ flex:1; display:flex; flex-direction:column; gap:14px; min-width:0; }
+
+.card{
+  background:var(--surface); border:1px solid var(--ring); border-radius:20px;
+  padding:clamp(18px,2.4vw,40px); display:flex; flex-direction:column; gap:14px;
+  box-shadow:0 1px 2px rgba(0,0,0,.04);
+}
+.dark .card{ background:var(--surface-dark-2); border-color:var(--ring-dark); }
+.card.fill-maroon{ background:var(--maroon-fixed); color:#fff; border-color:transparent; }
+.card.fill-maroon h3, .card.fill-maroon b{ color:#fff; }
+.card.fill-maroon p, .card.fill-maroon ul, .card.fill-maroon li{ color:#fff; }
+.card h3{ font-size:clamp(16px,1.6vw,24px); font-weight:700; color:var(--maroon); margin:0; }
+.dark .card h3{ color:var(--gold); }
+.card p{ font-size:clamp(13px,1.3vw,18px); line-height:1.55; color:var(--ink); margin:0; }
+.dark .card p{ color:var(--ink-on-dark); }
+.card ul{ margin:0; padding-left:1.1em; font-size:clamp(13px,1.3vw,18px); line-height:1.7; color:var(--ink); }
+.dark .card ul{ color:var(--ink-on-dark); }
+.card .muted{ color:var(--ink-faint); font-style:italic; font-size:clamp(11px,1.1vw,15px); }
+
+b.accent{ color:var(--maroon); }
+.dark b.accent{ color:var(--gold); }
+.mono{ font-family:'IBM Plex Mono','Courier New',monospace; }
+.serif-eq{ font-family:'Libre Baskerville', Georgia, serif; font-style:italic; font-weight:700; color:var(--maroon); }
+.dark .serif-eq{ color:#fff; }
+
+.pill{ display:inline-flex; align-items:center; background:var(--gold-fixed); color:var(--maroon-deep-fixed); font-weight:700; font-size:clamp(10px,1vw,13px); letter-spacing:.08em; text-transform:uppercase; padding:5px 14px; border-radius:999px; width:fit-content; }
+
+/* Pipeline row — steps are buttons the viewer clicks to drive what the stage panel shows */
+.pipeline{ display:flex; align-items:stretch; gap:10px; flex-wrap:nowrap; }
+.pstep{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; background:var(--surface); border:1px solid var(--ring); border-radius:14px; padding:14px 8px; text-align:center; transition:background .2s, color .2s, transform .2s, border-color .2s; font:inherit; cursor:pointer; }
+.pstep:hover{ border-color:var(--maroon-fixed); transform:translateY(-2px); }
+.pstep .n{ font-size:clamp(14px,1.6vw,22px); font-weight:700; color:var(--maroon); }
+.pstep .t{ font-size:clamp(10px,1vw,14px); font-weight:600; }
+.pstep .s{ font-size:clamp(9px,.8vw,12px); font-style:italic; color:var(--ink-faint); }
+.pstep.on{ background:var(--maroon-fixed); border-color:var(--maroon-fixed); color:#fff; transform:scale(1.04); }
+.pstep.on .n{ color:#fff; }
+.pstep.on .s{ color:#F0DCDE; }
+.pstep.quantum{ background:var(--gold-fixed); border-color:var(--gold-fixed); color:var(--maroon-deep-fixed); }
+.pstep.quantum .n{ color:var(--maroon-deep-fixed); }
+.pstep.quantum .s{ color:var(--maroon-deep-fixed); }
+.pstep.classical{ background:var(--maroon-fixed); border-color:var(--maroon-fixed); color:#fff; }
+.pstep.classical .n{ color:#fff; }
+.pstep.classical .s{ color:#F0DCDE; }
+.parrow{ display:flex; align-items:center; color:var(--gold-deep); font-size:20px; flex:0 0 auto; }
+
+/* Stage panel — the per-stage demo revealed under a pipeline when its step is clicked */
+.stage-panel{ position:relative; min-height:0; }
+.stage-view{ display:none; }
+.stage-view.shown{ display:flex; flex-direction:column; gap:12px; animation:rise .3s ease both; }
+.stage-dot-row{ display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+.hint{ font-size:clamp(11px,1vw,14px); color:var(--ink-soft); text-align:center; margin:0; }
+.dark .hint{ color:var(--ink-on-dark-soft); }
+
+/* Controls shared by live widgets */
+.ctrl-row{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+.ctrl-label{ font-size:clamp(12px,1.1vw,15px); font-weight:600; color:var(--ink-soft); }
+.dark .ctrl-label{ color:var(--ink-on-dark-soft); }
+.ctrl-value{ font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; font-size:clamp(14px,1.6vw,20px); font-weight:600; color:var(--maroon); }
+.dark .ctrl-value{ color:var(--gold); }
+input[type="range"]{ -webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:999px; background:var(--ring); outline:none; margin:2px 0; }
+.dark input[type="range"]{ background:var(--ring-dark); }
+input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:24px; height:24px; border-radius:50%; background:var(--maroon); border:4px solid var(--surface); box-shadow:0 1px 4px rgba(0,0,0,.35); cursor:pointer; }
+.dark input[type="range"]::-webkit-slider-thumb{ background:var(--gold); border-color:var(--surface-dark-2); }
+input[type="range"]::-moz-range-thumb{ width:16px; height:16px; border-radius:50%; background:var(--maroon); border:4px solid var(--surface); cursor:pointer; }
+.ticks{ display:flex; justify-content:space-between; font-size:clamp(10px,.9vw,12px); color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; }
+
+.bar-track{ height:10px; border-radius:999px; background:var(--surface-2); overflow:hidden; }
+.dark .bar-track{ background:var(--surface-dark); }
+.bar-fill{ height:100%; border-radius:999px; transition:width .08s linear; }
+
+.prob-tile{ flex:1; background:var(--surface-2); border-radius:14px; padding:12px 16px; display:flex; flex-direction:column; gap:2px; }
+.dark .prob-tile{ background:var(--surface-dark); }
+.prob-tile .k{ font-size:clamp(11px,1vw,13px); color:var(--ink-soft); }
+.dark .prob-tile .k{ color:var(--ink-on-dark-soft); }
+.prob-tile .v{ font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; font-size:clamp(18px,2.2vw,30px); font-weight:600; }
+
+text{ font-family:'IBM Plex Sans', Arial, sans-serif; }
+
+table.cmp{ border-collapse:collapse; width:100%; font-size:clamp(13px,1.3vw,19px); }
+table.cmp th{ background:var(--maroon); color:#fff; padding:10px 14px; text-align:left; }
+table.cmp td{ padding:10px 14px; border-bottom:1px solid var(--ring); }
+table.cmp tr:nth-child(even) td{ background:var(--surface-2); }
+table.cmp td:first-child{ font-weight:700; color:var(--maroon); }
+.dark table.cmp td:first-child{ color:var(--gold); }
+
+input[type="text"]{
+  font-family:'IBM Plex Mono', monospace; font-size:clamp(14px,1.4vw,18px);
+  padding:10px 14px; border-radius:10px; border:1px solid var(--ring); background:var(--surface);
+  color:var(--ink); width:100%;
+}
+
+button.playbtn{
+  font-family:'IBM Plex Sans', Arial, sans-serif; font-weight:600; font-size:14px;
+  background:var(--maroon); color:#fff; border:none; border-radius:999px; padding:10px 20px;
+  cursor:pointer; width:fit-content; display:inline-flex; align-items:center; gap:8px;
+}
+button.playbtn:hover{ filter:brightness(1.08); }
+
+/* Chrome: progress bar + nav controls */
+#progress{ position:fixed; top:0; left:0; height:4px; background:var(--maroon); z-index:50; transition:width .3s ease; }
+.dark-slide-active #progress{ background:var(--gold); }
+#chrome{ position:fixed; right:18px; bottom:16px; display:flex; align-items:center; gap:10px; z-index:50; }
+#counter{ position:fixed; left:18px; bottom:16px; font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--ink-faint); z-index:50; }
+.navbtn{
+  width:42px; height:42px; border-radius:50%; border:1px solid var(--ring); background:var(--surface);
+  color:var(--maroon); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+.navbtn:hover{ background:var(--maroon); color:#fff; }
+.navbtn:disabled{ opacity:.35; cursor:default; }
+.navbtn:disabled:hover{ background:var(--surface); color:var(--maroon); }
+
+/* Bloch circle */
+.bloch-wrap{ display:flex; justify-content:center; align-items:center; }
+</style>
+
+<div id="progress"></div>
+<div id="deck">
+
+<!-- 1 -->
+<section class="slide dark active" id="s-cover" style="align-items:flex-start; justify-content:center;">
+  <span class="pill">Interactive Guide</span>
+  <h1 class="title hero">Quantum Machine Learning</h1>
+  <p class="lede" style="font-size:clamp(15px,1.8vw,24px); max-width:50ch;">Every circuit on these slides actually runs — the quantum state updates in real time as each stage unfolds.</p>
+  <p class="lede" style="margin-top:auto; font-size:clamp(12px,1.1vw,15px);">From superposition to a trained hybrid classifier, one stage at a time.</p>
+</section>
+
+<!-- 2 -->
+<section class="slide light" id="s-review">
+  <p class="eyebrow">Review</p>
+  <h1 class="title">From Hardware to Machine Learning</h1>
+  <div class="row">
+    <div class="card" style="flex:1">
+      <h3>What We Already Know</h3>
+      <ul>
+        <li>A qubit's state: ψ = α·0 + β·1</li>
+        <li>Gates (H, X, Z, CX, …) are unitary matrices</li>
+        <li>Circuits are built from gates, then transpiled and run</li>
+        <li>Real hardware is noisy — NISQ-era devices</li>
+      </ul>
+    </div>
+    <div class="card fill-maroon" style="flex:1">
+      <h3>What Changes Today</h3>
+      <ul>
+        <li>Circuits stop being demonstrations — they become trainable models</li>
+        <li>A circuit's gate angles become parameters you optimize</li>
+        <li>A classical optimizer drives the loop; the circuit is one step inside it</li>
+        <li>This is Quantum Machine Learning — hybrid, not purely quantum</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide light" id="s-bigpicture">
+  <p class="eyebrow">The Big Picture</p>
+  <h1 class="title">QML Is Just a Pipeline</h1>
+  <div class="card"><p><b class="accent">If you can understand a pipeline, you can understand QML.</b> Data flows through a series of transformations — just like plumbing. Each stage below opens into what actually happens there.</p></div>
+  <div class="pipeline" id="pipe-big">
+    <button class="pstep" data-stage="dataset"><div class="n">1</div><div class="t">Dataset</div></button>
+    <div class="parrow">→</div>
+    <button class="pstep" data-stage="features"><div class="n">2</div><div class="t">Feature Extraction</div></button>
+    <div class="parrow">→</div>
+    <button class="pstep" data-stage="normalize"><div class="n">3</div><div class="t">Normalization</div></button>
+    <div class="parrow">→</div>
+    <button class="pstep" data-stage="encode"><div class="n">4</div><div class="t">Quantum Encoding</div></button>
+    <div class="parrow">→</div>
+    <button class="pstep" data-stage="circuit"><div class="n">5</div><div class="t">Variational Circuit</div></button>
+    <div class="parrow">→</div>
+    <button class="pstep" data-stage="measure"><div class="n">6</div><div class="t">Measurement</div></button>
+    <div class="parrow">→</div>
+    <button class="pstep" data-stage="predict"><div class="n">7</div><div class="t">Prediction</div></button>
+  </div>
+
+  <div class="card stage-panel" id="panel-big" style="flex:1;">
+    <div class="stage-view" data-view="dataset">
+      <h3>1 · Dataset — Raw Labeled Examples</h3>
+      <div class="row center">
+        <svg viewBox="0 0 420 220" style="width:100%; max-width:420px; height:auto;" id="sv-dataset"></svg>
+      </div>
+      <p class="hint">A small labeled dataset — two classes, two numeric features (e.g. petal length &amp; width).</p>
+      <button class="playbtn" id="sv-dataset-reroll">⟲ New sample</button>
+    </div>
+    <div class="stage-view" data-view="features">
+      <h3>2 · Feature Extraction — From Raw Input to Numbers</h3>
+      <div class="row" style="align-items:center; gap:18px;">
+        <div class="card" style="flex:1; background:var(--surface-2);"><p class="mono" style="margin:0; font-size:clamp(13px,1.3vw,17px);" id="sv-feat-raw">"win money now"</p><p class="muted" style="margin:4px 0 0;">raw input</p></div>
+        <div class="parrow" style="font-size:28px;">→</div>
+        <div class="card" style="flex:1; background:var(--surface-2);">
+          <div id="sv-feat-words" style="display:flex; flex-direction:column; gap:6px;"></div>
+          <p class="muted" style="margin:4px 0 0;">extracted feature vector</p>
+        </div>
+      </div>
+      <input type="text" id="sv-feat-input" value="win money now" placeholder="Type a message to extract features from…">
+      <p class="hint">The extracted counts update as the message changes.</p>
+    </div>
+    <div class="stage-view" data-view="normalize">
+      <h3>3 · Normalization — Bounding the Values</h3>
+      <div class="ctrl-row"><span class="ctrl-label">Raw count</span><span class="ctrl-value" id="sv-norm-raw">5</span></div>
+      <input type="range" id="sv-norm-slider" min="0" max="10" step="1" value="5">
+      <div class="row" style="align-items:center; gap:14px;">
+        <div class="bar-track" style="flex:1;"><div class="bar-fill" id="sv-norm-bar" style="width:50%; background:var(--maroon-fixed);"></div></div>
+        <span class="ctrl-value" id="sv-norm-out">0.500</span>
+      </div>
+      <p class="hint">Quantum rotation gates need inputs bounded to [0, 1].</p>
+    </div>
+    <div class="stage-view" data-view="encode">
+      <h3>4 · Quantum Encoding — Data Becomes a Rotation</h3>
+      <div class="row" style="align-items:center; gap:24px;">
+        <div class="col" style="flex:1;">
+          <div class="ctrl-row"><span class="ctrl-label">Feature value, x</span><span class="ctrl-value" id="sv-enc-xval">0.50</span></div>
+          <input type="range" id="sv-enc-x" min="0" max="1" step="0.01" value="0.5">
+          <p class="hint">The same x from Normalization now sets a gate angle on the qubit shown here.</p>
+        </div>
+        <svg viewBox="0 0 160 160" width="150" height="150">
+          <circle cx="80" cy="80" r="64" fill="none" stroke="var(--ring)" stroke-width="2"></circle>
+          <line x1="16" y1="80" x2="144" y2="80" stroke="var(--ring)" stroke-width="1"></line>
+          <line id="sv-enc-vec" x1="80" y1="80" x2="144" y2="80" stroke="var(--maroon-fixed)" stroke-width="3" stroke-linecap="round"></line>
+          <circle id="sv-enc-tip" cx="144" cy="80" r="6" fill="var(--maroon-fixed)"></circle>
+        </svg>
+      </div>
+    </div>
+    <div class="stage-view" data-view="circuit">
+      <h3>5 · Variational Circuit — The Trainable Part</h3>
+      <div class="row center" style="gap:12px;">
+        <div class="card" style="flex:0 0 150px; background:var(--gold-fixed); color:var(--maroon-deep-fixed); align-items:center;"><b style="font-size:18px;">H</b><span class="muted" style="color:var(--maroon-deep-fixed);">fixed</span></div>
+        <div class="parrow">→</div>
+        <div class="card" style="flex:0 0 150px; background:var(--gold-fixed); color:var(--maroon-deep-fixed); align-items:center;"><b style="font-size:18px;">Rz(x)</b><span class="muted" style="color:var(--maroon-deep-fixed);">fixed, data</span></div>
+        <div class="parrow">→</div>
+        <div class="card fill-maroon" style="flex:0 0 150px; align-items:center;"><b style="font-size:18px;">Ry(θ)</b><span class="muted" style="color:#F0DCDE;">trainable</span></div>
+      </div>
+      <p class="hint">Gold gates are fixed by the feature map; the maroon gate's angle θ is what training actually adjusts.</p>
+    </div>
+    <div class="stage-view" data-view="measure">
+      <h3>6 · Measurement — Collapsing to Counts</h3>
+      <button class="playbtn" id="sv-measure-run">▶ Measure 100 shots</button>
+      <div class="row" style="align-items:flex-end; gap:30px; justify-content:center; min-height:140px;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><span class="mono" id="sv-measure-0-label">0</span><div id="sv-measure-0" style="width:60px; height:0px; background:var(--gold-fixed); border-radius:6px 6px 0 0; transition:height .6s ease;"></div><span class="muted">∣0⟩</span></div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><span class="mono" id="sv-measure-1-label">0</span><div id="sv-measure-1" style="width:60px; height:0px; background:var(--maroon-fixed); border-radius:6px 6px 0 0; transition:height .6s ease;"></div><span class="muted">∣1⟩</span></div>
+      </div>
+      <p class="hint">Each shot samples the state produced in Quantum Encoding.</p>
+    </div>
+    <div class="stage-view" data-view="predict">
+      <h3>7 · Prediction — Counts Become a Label</h3>
+      <div class="row center">
+        <div class="card fill-maroon" id="sv-predict-card" style="align-items:center; flex:0 0 auto; padding:28px 48px;">
+          <p class="muted" style="color:#F0DCDE; margin:0;">Majority vote says</p>
+          <h1 class="title" style="color:#fff; margin:4px 0 0;" id="sv-predict-label">Not Spam</h1>
+        </div>
+      </div>
+      <p class="hint">Whichever outcome measured more often becomes the model's prediction.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide light" id="s-hybrid">
+  <p class="eyebrow">The Hybrid Loop</p>
+  <h1 class="title">Classical + Quantum, Working Together</h1>
+  <p class="lede">Every stage runs on either classical or quantum hardware — never both.</p>
+  <div class="pipeline" id="pipe-hybrid">
+    <button class="pstep classical" data-stage="preprocess"><div class="n">1</div><div class="t">Preprocess</div><div class="s">CPU</div></button>
+    <div class="parrow">→</div>
+    <button class="pstep quantum" data-stage="featuremap"><div class="n">2</div><div class="t">Feature Map</div><div class="s">QPU</div></button>
+    <div class="parrow">→</div>
+    <button class="pstep quantum" data-stage="ansatz"><div class="n">3</div><div class="t">Ansatz</div><div class="s">QPU</div></button>
+    <div class="parrow">→</div>
+    <button class="pstep quantum" data-stage="measure"><div class="n">4</div><div class="t">Measure</div><div class="s">QPU</div></button>
+    <div class="parrow">→</div>
+    <button class="pstep classical" data-stage="optimize"><div class="n">5</div><div class="t">Optimize</div><div class="s">CPU</div></button>
+  </div>
+  <div class="card stage-panel" id="panel-hybrid">
+    <div class="stage-view" data-view="preprocess"><h3>1 · Preprocess — CPU</h3><p>Scale and vectorize the raw data (CountVectorizer, MinMaxScaler) so every value is bounded and comparable. Ordinary classical code — no quantum hardware involved yet.</p></div>
+    <div class="stage-view" data-view="featuremap"><h3>2 · Feature Map — QPU</h3><p>A fixed circuit (<span class="mono">zz_feature_map</span>) encodes the preprocessed data into qubit rotations. Its angles are set by the data — nothing here is learned.</p></div>
+    <div class="stage-view" data-view="ansatz"><h3>3 · Ansatz — QPU</h3><p>A trainable circuit (<span class="mono">real_amplitudes</span>) is applied right after the feature map. Its rotation angles θ are exactly what training adjusts.</p></div>
+    <div class="stage-view" data-view="measure"><h3>4 · Measure — QPU</h3><p>The circuit is sampled many times (shots); the outcome distribution becomes a predicted label — this is the only place where quantum randomness enters the picture.</p></div>
+    <div class="stage-view" data-view="optimize"><h3>5 · Optimize — CPU</h3><p><b class="accent">This is why QML is called hybrid.</b> A classical optimizer (COBYLA) compares the prediction to the true label, then proposes new θ — which feed straight back into stage 3, Ansatz. The loop repeats.</p></div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide light" id="s-convergence">
+  <p class="eyebrow">Definitions</p>
+  <h1 class="title">The Convergence: What Is QML?</h1>
+  <div class="card"><p><b class="accent">Classical ML</b> finds patterns by adjusting trainable parameters. <b class="accent">Quantum mechanics</b> offers superposition and entanglement — multiple states processed at once. QML harnesses that power to do the pattern recognition.</p></div>
+  <div class="row center" style="position:relative; min-height:260px;">
+    <svg viewBox="0 0 600 280" style="width:100%; max-width:600px; height:auto;">
+      <circle cx="240" cy="140" r="110" fill="var(--maroon)" opacity="0.5"></circle>
+      <circle cx="360" cy="140" r="110" fill="var(--gold)" opacity="0.55"></circle>
+      <text x="90" y="145" text-anchor="end" font-size="20" font-weight="700" fill="var(--maroon)">Pattern Recognition</text>
+      <text x="510" y="145" text-anchor="start" font-size="20" font-weight="700" fill="var(--gold-deep)">Superposition &amp; Entanglement</text>
+      <text x="300" y="145" text-anchor="middle" font-size="22" font-weight="700" fill="#fff">QML</text>
+    </svg>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide light" id="s-cvq">
+  <p class="eyebrow">Side by Side</p>
+  <h1 class="title">Classical vs. Quantum Machine Learning</h1>
+  <table class="cmp">
+    <tr><th></th><th>Classical Models</th><th>Quantum Models</th></tr>
+    <tr><td>Data Unit</td><td>Bits — strictly 0 or 1</td><td>Qubits — 0, 1, or both at once</td></tr>
+    <tr><td>Hardware</td><td>Classical processors (silicon)</td><td>Quantum circuits</td></tr>
+    <tr><td>Processing</td><td>Sequential, deterministic</td><td>Superposition &amp; entanglement — many states at once</td></tr>
+  </table>
+  <p class="lede" style="text-align:center; margin:0 auto;">This is why QML has so much potential: a quantum processor can evaluate a vast, complex state space all at once.</p>
+</section>
+
+<!-- 7 -->
+<section class="slide light" id="s-workflow">
+  <p class="eyebrow">The Workflow</p>
+  <h1 class="title">The General QML Workflow</h1>
+  <div class="pipeline" id="pipe-workflow">
+    <button class="pstep" data-stage="preprocess"><div class="n">1</div><div class="t">Preprocess</div><div class="s">scale features</div></button>
+    <button class="pstep" data-stage="featuremap"><div class="n">2</div><div class="t">Feature Map</div><div class="s">encode data</div></button>
+    <button class="pstep" data-stage="ansatz"><div class="n">3</div><div class="t">Ansatz</div><div class="s">trainable angles</div></button>
+    <button class="pstep" data-stage="measure"><div class="n">4</div><div class="t">Measure → Loss</div><div class="s">predict vs. truth</div></button>
+    <button class="pstep" data-stage="optimizer"><div class="n">5</div><div class="t">Optimizer</div><div class="s">adjust θ, repeat</div></button>
+  </div>
+  <div class="card stage-panel" id="panel-workflow">
+    <div class="stage-view" data-view="preprocess"><h3>1 · Preprocess</h3><p>Scale every raw feature into a bounded range (typically [0, 1]) with something like MinMaxScaler, so the values are safe to feed into a rotation gate.</p></div>
+    <div class="stage-view" data-view="featuremap"><h3>2 · Feature Map</h3><p>Run the fixed, non-trainable encoding circuit — e.g. <span class="mono">zz_feature_map</span> — that turns each scaled data point into a specific quantum state.</p></div>
+    <div class="stage-view" data-view="ansatz"><h3>3 · Ansatz</h3><p>Apply the trainable circuit — e.g. <span class="mono">real_amplitudes</span> — whose rotation angles θ are the model's actual learned parameters.</p></div>
+    <div class="stage-view" data-view="measure"><h3>4 · Measure → Loss</h3><p>Sample the circuit, turn the outcome distribution into a predicted label, then compare that prediction against the true label to get a loss value.</p></div>
+    <div class="stage-view" data-view="optimizer"><h3>5 · Optimizer</h3><p>A classical optimizer (COBYLA) looks at the loss and proposes new values for θ — then the whole workflow repeats from stage 3 until the loss stops improving.</p></div>
+  </div>
+  <div class="card fill-maroon"><p>Qiskit's <b>VQC</b> class packages all five stages behind <span class="mono">fit(X_train, y_train)</span> / <span class="mono">predict(X_test)</span> — mirroring a scikit-learn estimator.</p></div>
+</section>
+
+<!-- 8: LIVE feature map Bloch sphere -->
+<section class="slide light" id="s-featuremap">
+  <p class="eyebrow">Encoding</p>
+  <h1 class="title">Feature Maps: Encoding Data Into Qubits</h1>
+  <div class="row">
+    <div class="col" style="flex:1.1">
+      <div class="card">
+        <h3>Φ(x): a Fixed, Non-Trainable Circuit</h3>
+        <p><span class="mono">Rz(x)·H∣0⟩</span> rotates the real qubit state below — not a canned picture.</p>
+      </div>
+      <div class="card">
+        <div class="ctrl-row"><span class="ctrl-label">Feature value, x</span><span class="ctrl-value" id="fm-xval">0.50</span></div>
+        <input type="range" id="fm-x" min="0" max="1" step="0.005" value="0.5">
+        <div class="ticks"><span>0.0</span><span>0.5</span><span>1.0</span></div>
+        <p class="muted">zz_feature_map: H for superposition, then Rz(x) keyed to the feature value.</p>
+      </div>
+    </div>
+    <div class="col" style="flex:0.9; align-items:center; justify-content:center;">
+      <div class="bloch-wrap">
+        <svg viewBox="0 0 240 240" width="260" height="260" role="img" aria-label="Bloch vector rotating live with x">
+          <circle cx="120" cy="120" r="96" fill="none" stroke="var(--ring)" stroke-width="2"></circle>
+          <ellipse cx="120" cy="120" rx="96" ry="30" fill="none" stroke="var(--ring)" stroke-width="1"></ellipse>
+          <line x1="24" y1="120" x2="216" y2="120" stroke="var(--ring)" stroke-width="1"></line>
+          <text x="120" y="14" text-anchor="middle" font-size="16" fill="var(--ink-soft)">∣0⟩</text>
+          <text x="120" y="234" text-anchor="middle" font-size="16" fill="var(--ink-soft)">∣1⟩</text>
+          <line id="fm-vec" x1="120" y1="120" x2="120" y2="24" stroke="var(--maroon)" stroke-width="4" stroke-linecap="round"></line>
+          <circle id="fm-tip" cx="120" cy="24" r="7" fill="var(--maroon)"></circle>
+        </svg>
+      </div>
+      <p class="muted" id="fm-state" style="text-align:center;">∣ψ⟩ = 0.707∣0⟩ + 0.707·e^(0.50i)∣1⟩</p>
+    </div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide light" id="s-zzeq">
+  <p class="eyebrow">Mathematically</p>
+  <h1 class="title">The ZZ Feature Map: Building the Equation</h1>
+  <div class="row">
+    <div class="card" style="flex:1">
+      <h3>1. Start Simple</h3>
+      <p class="serif-eq" style="font-size:clamp(20px,2.4vw,30px); text-align:center;">φ(x)⟩ = Uφ(x) · 0⟩ⁿ</p>
+      <table class="cmp" style="font-size:14px;">
+        <tr><td>x</td><td>The classical input data</td></tr>
+        <tr><td>n</td><td>The number of qubits</td></tr>
+        <tr><td>0⊗n</td><td>All n qubits start at zero</td></tr>
+        <tr><td>Uφ(x)</td><td>The data-encoding circuit</td></tr>
+        <tr><td>φ(x)⟩</td><td>The encoded quantum state</td></tr>
+      </table>
+      <p class="muted"><b class="accent">Key distinction:</b> unlike a trainable ansatz, these angles are fixed by the data — not learned.</p>
+    </div>
+    <div class="card" style="flex:1">
+      <h3>2. Why "ZZ"? The Pauli-Z Interaction</h3>
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; font-family:'IBM Plex Mono',monospace;">
+        <span>Z =</span>
+        <span style="display:inline-flex; align-items:center; gap:4px;">
+          <span style="font-size:2.1em; font-weight:300;">[</span>
+          <span style="display:inline-grid; grid-template-columns:1fr 1fr; gap:2px 14px; text-align:center;"><span>1</span><span>0</span><span>0</span><span>&minus;1</span></span>
+          <span style="font-size:2.1em; font-weight:300;">]</span>
+        </span>
+        <span>Z⊗Z = diag(1, &minus;1, &minus;1, 1)</span>
+      </div>
+      <div class="card fill-maroon" style="padding:16px;"><p class="serif-eq" style="color:#fff; text-align:center; font-size:22px;">Uzz(α) = e^(−iα·Z⊗Z)</p></div>
+      <p class="muted">This gate applies a phase depending on the joint state of two qubits — combined with single-qubit rotations, that is what encodes a relationship between features.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 10: LIVE ZZ phase demo — direct toggles, not a forced step sequence -->
+<section class="slide light" id="s-zzex">
+  <p class="eyebrow">The ZZ Interaction</p>
+  <h1 class="title">A Worked Example: Applying the ZZ Interaction</h1>
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <h3>Building the State, Gate by Gate</h3>
+        <p>Each gate applies independently, in either order, to the real 2-qubit state vector on the right.</p>
+        <label style="display:flex; align-items:center; gap:10px; font-weight:600; cursor:pointer;"><input type="checkbox" id="zz-toggle-h" style="width:20px; height:20px;" checked> Apply H⊗H (superposition)</label>
+        <label style="display:flex; align-items:center; gap:10px; font-weight:600; cursor:pointer;"><input type="checkbox" id="zz-toggle-zz" style="width:20px; height:20px;" checked> Apply the ZZ interaction (phase)</label>
+        <p class="muted" id="zz-step">Both gates on — equal superposition with the ZZ phase pattern applied.</p>
+      </div>
+      <div class="card">
+        <p class="mono" id="zz-state" style="font-size:16px; line-height:1.8;">ψ⟩ = 1.00∣00⟩</p>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card" style="flex:1;">
+        <h3>Amplitude by Basis State</h3>
+        <div id="zz-bars" style="display:flex; flex-direction:column; gap:10px; margin-top:6px;"></div>
+        <p class="muted" style="margin-top:10px;">Bar color: gold = positive phase, maroon = negative phase (the +1/−1 eigenvalue the ZZ gate applies). With H⊗H unchecked, the ZZ phase alone does nothing to ∣00⟩, since it's already a +1 eigenstate.</p>
+      </div>
+      <div class="card">
+        <h3>The Single-Qubit Side of the Encoding</h3>
+        <p class="serif-eq" style="font-size:clamp(18px,2vw,24px); text-align:center;">R_z(x) = e^(−ix·Z/2)</p>
+        <p class="muted">The same Pauli-Z rotation also appears alone, encoding one feature per qubit — the exact ½-factor is a convention, and differs slightly between references.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide light" id="s-ansatz-intro">
+  <p class="eyebrow">The Trainable Half</p>
+  <h1 class="title">The Ansatz: A Trainable Circuit</h1>
+  <div class="row">
+    <div class="card" style="flex:1">
+      <h3>Applied Right After the Feature Map</h3>
+      <p>Unlike the feature map, the ansatz's rotation angles are <b class="accent">free, trainable parameters</b> — exactly analogous to the weights of a classical neural-network layer.</p>
+      <p><span class="mono accent" style="font-weight:700;">real_amplitudes</span>: alternates layers of single-qubit Y-rotations with fixed entangling CX gates.</p>
+      <p class="muted">More layers → more trainable parameters, more expressive power — but also a deeper circuit.</p>
+    </div>
+    <div class="card" style="flex:1; align-items:center; justify-content:center;">
+      <img src="ansatz.png" alt="Circuit diagram of a two-qubit RealAmplitudes ansatz with trainable parameters theta 0 through 3" style="width:100%; max-width:420px; height:auto;">
+    </div>
+  </div>
+</section>
+
+<!-- 11.5 -->
+<section class="slide light" id="s-ansatz-eq">
+  <p class="eyebrow">The Ansatz</p>
+  <h1 class="title">The Ansatz, Mathematically</h1>
+  <div class="row">
+    <div class="card" style="flex:1">
+      <h3>Notation</h3>
+      <p class="serif-eq" style="font-size:clamp(20px,2.4vw,30px); text-align:center;">ψ(θ)⟩ = U(θ) · 0⟩</p>
+      <table class="cmp" style="font-size:14px;">
+        <tr><td>0⟩</td><td>The starting state, before any trainable rotation</td></tr>
+        <tr><td>U(θ)</td><td>The ansatz circuit, built from rotation gates</td></tr>
+        <tr><td>θ</td><td>The trainable parameter vector — what training adjusts</td></tr>
+        <tr><td>ψ(θ)⟩</td><td>The resulting quantum state</td></tr>
+      </table>
+    </div>
+    <div class="card" style="flex:1">
+      <h3>Stacking Gates</h3>
+      <p class="serif-eq" style="font-size:clamp(17px,1.9vw,24px); text-align:center;">U(θ) = Rᵧ(θ₂) · R_z(θ₁) · Rᵧ(θ₀)</p>
+      <p>Gates apply right to left: Rᵧ(θ₀) acts on ∣0⟩ first, then R_z(θ₁), then Rᵧ(θ₂). θ = (θ₀, θ₁, θ₂) is the full parameter vector.</p>
+      <div class="card fill-maroon" style="padding:16px; align-items:center;">
+        <div style="display:flex; align-items:center; gap:10px; font-family:'IBM Plex Mono',monospace; color:#fff;">
+          <span>Rᵧ(θ) =</span>
+          <span style="display:inline-flex; align-items:center; gap:4px;">
+            <span style="font-size:2.1em; font-weight:300;">[</span>
+            <span style="display:inline-grid; grid-template-columns:1fr 1fr; gap:2px 14px; text-align:center;"><span>cos(θ/2)</span><span>&minus;sin(θ/2)</span><span>sin(θ/2)</span><span>cos(θ/2)</span></span>
+            <span style="font-size:2.1em; font-weight:300;">]</span>
+          </span>
+        </div>
+      </div>
+      <p class="muted">Applied to ∣0⟩, this gives the closed form ψ(θ)⟩ = cos(θ/2)∣0⟩ + sin(θ/2)∣1⟩ — the same expression the next slide computes live.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 12: LIVE ansatz Ry(theta) slider -->
+<section class="slide light" id="s-ansatz-live">
+  <p class="eyebrow">The Ansatz</p>
+  <h1 class="title">The Ansatz: Rᵧ(θ)</h1>
+  <div class="row">
+    <div class="col" style="flex:1;">
+      <div class="card">
+        <div class="ctrl-row"><span class="ctrl-label">Rotation angle, θ</span><span class="ctrl-value" id="an-tval">1.57 rad</span></div>
+        <input type="range" id="an-theta" min="0" max="3.14159265" step="0.001" value="1.5708">
+        <div class="ticks"><span>0</span><span>π/2</span><span>π</span></div>
+      </div>
+      <div class="card">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <div class="ctrl-row"><span class="ctrl-label">Amplitude of ∣0⟩</span><span class="ctrl-value" id="an-a0">1.000</span></div>
+          <div class="bar-track"><div class="bar-fill" id="an-a0bar" style="width:100%; background:var(--gold);"></div></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; margin-top:10px;">
+          <div class="ctrl-row"><span class="ctrl-label">Amplitude of ∣1⟩</span><span class="ctrl-value" id="an-a1">0.000</span></div>
+          <div class="bar-track"><div class="bar-fill" id="an-a1bar" style="width:0%; background:var(--maroon);"></div></div>
+        </div>
+        <div class="row" style="gap:12px; margin-top:12px;">
+          <div class="prob-tile"><span class="k">P(0)</span><span class="v" id="an-p0">100.0%</span></div>
+          <div class="prob-tile"><span class="k">P(1)</span><span class="v" id="an-p1">0.0%</span></div>
+        </div>
+        <p class="muted">Ideal-qubit probabilities, computed live from Ry(θ)∣0⟩ — the same matrix the companion notebook uses.</p>
+        <p class="muted">At θ = 2.60 rad, this works out to amplitudes 0.267 and 0.964 — P(0) ≈ 7.2%, P(1) ≈ 92.8%.</p>
+      </div>
+    </div>
+    <div class="col" style="flex:0.8; align-items:center; justify-content:center;">
+      <svg viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="Bloch vector rotating with theta">
+        <circle cx="120" cy="120" r="96" fill="none" stroke="var(--ring)" stroke-width="2"></circle>
+        <line x1="24" y1="120" x2="216" y2="120" stroke="var(--ring)" stroke-width="1"></line>
+        <text x="120" y="14" text-anchor="middle" font-size="16" fill="var(--ink-soft)">∣0⟩</text>
+        <text x="120" y="234" text-anchor="middle" font-size="16" fill="var(--ink-soft)">∣1⟩</text>
+        <line id="an-vec" x1="120" y1="120" x2="120" y2="24" stroke="var(--maroon)" stroke-width="4" stroke-linecap="round"></line>
+        <circle id="an-tip" cx="120" cy="24" r="7" fill="var(--maroon)"></circle>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 12.5 -->
+<section class="slide light" id="s-ansatz-summary">
+  <p class="eyebrow">The Ansatz</p>
+  <h1 class="title">Three Equations to Remember</h1>
+  <div class="row">
+    <div class="card" style="flex:1; align-items:center; text-align:center;">
+      <h3>The State</h3>
+      <p class="serif-eq" style="font-size:clamp(18px,2vw,26px);">ψ(θ)⟩ = U(θ)·0⟩</p>
+      <p class="muted">The ansatz circuit applied to the starting state.</p>
+    </div>
+    <div class="card" style="flex:1; align-items:center; text-align:center;">
+      <h3>The Prediction</h3>
+      <p class="serif-eq" style="font-size:clamp(18px,2vw,26px);">f(θ) = ⟨ψ(θ)∣O∣ψ(θ)⟩</p>
+      <p class="muted">Measuring an observable O on that state turns the circuit into a prediction.</p>
+    </div>
+    <div class="card" style="flex:1; align-items:center; text-align:center;">
+      <h3>The Learning</h3>
+      <p class="serif-eq" style="font-size:clamp(18px,2vw,26px);">θ* = argmin L(θ)</p>
+      <p class="muted">Training searches for the parameter vector θ that minimizes the loss.</p>
+    </div>
+  </div>
+  <div class="card fill-maroon"><p>Everything in this section reduces to these three steps: build the state, turn it into a prediction, then search for the θ that makes the prediction right.</p></div>
+</section>
+
+<!-- 13 -->
+<section class="slide light" id="s-fmvans">
+  <p class="eyebrow">The Two Halves</p>
+  <h1 class="title">Feature Map vs. Ansatz</h1>
+  <div class="row">
+    <div class="card" style="flex:1"><h3>Feature Map Φ(x)</h3><ul><li>Fixed — no trainable parameters</li><li>Encodes the data point x</li><li>Same circuit every training step</li><li>Changing it changes how data is represented</li></ul></div>
+    <div class="card" style="flex:1"><h3>Ansatz U(θ)</h3><ul><li>Trainable — free parameters θ</li><li>Carries the learned decision boundary</li><li>Updated every training step</li><li>Changing it changes the model's expressive power</li></ul></div>
+  </div>
+</section>
+
+<!-- 14: click-driven training loop -->
+<section class="slide light" id="s-trainloop">
+  <p class="eyebrow">Training</p>
+  <h1 class="title">Training: The Classical Optimization Loop</h1>
+  <p class="lede">Step 5 feeds back into step 1 — this is a loop, not a line.</p>
+  <div class="card" style="flex:1;">
+    <div id="loop-steps" style="display:flex; flex-direction:column; gap:16px; flex:1; justify-content:center;">
+      <button class="loop-step" data-i="0" style="display:flex; align-items:center; gap:20px; padding:10px; border-radius:12px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">1</span><span style="margin:0; font-size:clamp(14px,1.5vw,19px);">Encode a training example with the feature map; apply the ansatz with its current parameters</span></button>
+      <button class="loop-step" data-i="1" style="display:flex; align-items:center; gap:20px; padding:10px; border-radius:12px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">2</span><span style="margin:0; font-size:clamp(14px,1.5vw,19px);">Measure the circuit (many shots); convert the outcome distribution into a predicted label</span></button>
+      <button class="loop-step" data-i="2" style="display:flex; align-items:center; gap:20px; padding:10px; border-radius:12px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">3</span><span style="margin:0; font-size:clamp(14px,1.5vw,19px);">Compute the loss between the prediction and the true label</span></button>
+      <button class="loop-step" data-i="3" style="display:flex; align-items:center; gap:20px; padding:10px; border-radius:12px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">4</span><span style="margin:0; font-size:clamp(14px,1.5vw,19px);">A classical optimizer (COBYLA) proposes new parameter values to reduce the loss</span></button>
+      <button class="loop-step" data-i="4" style="display:flex; align-items:center; gap:20px; padding:10px; border-radius:12px; transition:background .2s; background:none; border:none; text-align:left; cursor:pointer; font:inherit; color:inherit;"><span class="loop-circle" style="width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--maroon-fixed);flex:0 0 auto;transition:background .2s,color .2s;">5</span><span style="margin:0; font-size:clamp(14px,1.5vw,19px);">Repeat over the training set until the loss stops improving — then loop back to step 1</span></button>
+    </div>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide light" id="s-complete">
+  <p class="eyebrow">Putting It Together</p>
+  <h1 class="title">The Complete Circuit</h1>
+  <div class="card" style="align-items:center;">
+    <h3 style="align-self:flex-start;">Exactly What the Notebook Builds — reps=2</h3>
+    <img src="full_vqc_r2.png" alt="Full VQC circuit: ZZFeatureMap then RealAmplitudes ansatz then measurement" style="width:100%; max-width:1200px; height:auto;">
+  </div>
+  <div class="card fill-maroon"><p><b>Every VQC circuit is this same shape:</b> a fixed data-encoding block, a trainable block, then measurement. What changes between problems is <i>which</i> feature map and ansatz — not the overall pattern.</p></div>
+</section>
+
+<!-- 16 -->
+<section class="slide light" id="s-spam">
+  <p class="eyebrow">Case Study</p>
+  <h1 class="title">Classifying Spam Messages</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>The Goal</h3>
+      <p>Teach a quantum circuit to look at a text message and flag it as spam or not — a small, fully worked example of the same pipeline.</p>
+    </div>
+    <div class="card" style="flex:1;">
+      <h3>The Raw Dataset</h3>
+      <table class="cmp" style="font-size:15px;">
+        <tr><th>Message</th><th>Label</th></tr>
+        <tr><td style="color:var(--ink); font-weight:400;">"win money now"</td><td>1 (Spam)</td></tr>
+        <tr><td style="color:var(--ink); font-weight:400;">"claim your free prize"</td><td>1 (Spam)</td></tr>
+        <tr><td style="color:var(--ink); font-weight:400;">"meeting at 3pm"</td><td>0 (Not Spam)</td></tr>
+        <tr><td style="color:var(--ink); font-weight:400;">"project discussion tomorrow"</td><td>0 (Not Spam)</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 17: LIVE countvectorizer -->
+<section class="slide light" id="s-cv">
+  <p class="eyebrow">Preprocessing</p>
+  <h1 class="title">Step 1: From Text to Numbers</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>CountVectorizer — From Message to Vector</h3>
+      <input type="text" id="cv-input" value="win money now" placeholder="Type a message…">
+      <p class="muted">Vocabulary: win, money, meeting, tomorrow</p>
+    </div>
+    <div class="col" style="flex:1;">
+      <div class="card">
+        <div id="cv-words" style="display:flex; flex-direction:column; gap:10px;"></div>
+      </div>
+      <div class="card fill-maroon" style="align-items:center;">
+        <p class="mono" id="cv-vector" style="font-size:28px; font-weight:700; margin:0;">[0, 0, 0, 0]</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 18: LIVE minmaxscaler -->
+<section class="slide light" id="s-mms">
+  <p class="eyebrow">Normalization</p>
+  <h1 class="title">Step 2: Scaling to [0, 1]</h1>
+  <div class="card"><p><b class="accent">Quantum rotation gates need bounded inputs</b> — you cannot rotate a qubit "500 times" and get a meaningful result. Skipping normalization is the #1 reason beginners' QML models fail.</p></div>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <div class="ctrl-row"><span class="ctrl-label">Raw count</span><span class="ctrl-value" id="mms-raw">5</span></div>
+      <input type="range" id="mms-slider" min="0" max="10" step="1" value="5">
+      <div class="ticks"><span>0 (min)</span><span>5</span><span>10 (max)</span></div>
+    </div>
+    <div class="card" style="flex:1; align-items:center; justify-content:center;">
+      <p class="muted" style="margin:0;">MinMaxScaler output</p>
+      <p class="serif-eq" id="mms-out" style="font-size:40px; margin:6px 0;">0.500</p>
+      <div class="bar-track" style="width:100%;"><div class="bar-fill" id="mms-bar" style="width:50%; background:var(--maroon);"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="slide light" id="s-same">
+  <p class="eyebrow">Same Shape</p>
+  <h1 class="title">Same Pipeline, New Data Type</h1>
+  <div class="card"><p>From here, it is identical to the numeric pipeline you already built: encode with the feature map, train the VQC with COBYLA, measure, and predict.</p></div>
+  <div class="row" style="align-items:center;">
+    <div class="pstep" style="flex:1;"><div class="t">Encode</div></div>
+    <div class="parrow">→</div>
+    <div class="pstep" style="flex:1;"><div class="t">Train (VQC + COBYLA)</div></div>
+    <div class="parrow">→</div>
+    <div class="pstep" style="flex:1;"><div class="t">Measure</div></div>
+    <div class="parrow">→</div>
+    <div class="col" style="flex:0.7; gap:8px;">
+      <div class="pstep classical"><div class="t">Spam</div></div>
+      <div class="pstep"><div class="t">Not Spam</div></div>
+    </div>
+  </div>
+  <div class="card fill-maroon"><p>Result: <i>"Win money now"</i> → <b>Spam</b>. A toy example — but the pipeline is identical to what a real filter would use.</p></div>
+</section>
+
+<!-- 20 -->
+<section class="slide light" id="s-general">
+  <p class="eyebrow">Modularity</p>
+  <h1 class="title">The Power of Generalization</h1>
+  <div class="card"><p>The architecture is completely modular — swap the dataset at the front, keep everything else exactly the same.</p></div>
+  <div class="row" style="align-items:center; gap:10px;">
+    <div class="pstep classical" style="flex:0 0 160px;"><div class="t">Spam Text</div></div>
+    <div class="parrow">→</div>
+    <div class="card" style="flex:1; border-style:dashed; border-color:var(--gold); padding:14px; text-align:center;"><p style="margin:0; font-weight:700;">Normalize → Encode → Train → Measure</p></div>
+    <div class="parrow">→</div>
+    <div class="pstep classical" style="flex:0 0 160px;"><div class="t">Spam / Not Spam</div></div>
+  </div>
+  <div class="row" style="align-items:center; gap:10px;">
+    <div class="pstep quantum" style="flex:0 0 160px;"><div class="t">Iris Flowers</div></div>
+    <div class="parrow">→</div>
+    <div class="card" style="flex:1; border-style:dashed; border-color:var(--gold); padding:14px; text-align:center;"><p style="margin:0; font-weight:700;">Normalize → Encode → Train → Measure</p></div>
+    <div class="parrow">→</div>
+    <div class="pstep quantum" style="flex:0 0 160px;"><div class="t">Species 0, 1, 2</div></div>
+  </div>
+</section>
+
+<!-- 21 -->
+<section class="slide light" id="s-concrete">
+  <p class="eyebrow">Real Data</p>
+  <h1 class="title">A Concrete Case: Setosa vs. Versicolor</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>The Dataset</h3>
+      <ul><li>This example starts with the easy pair</li><li>Features: petal length and petal width</li><li>2 features → 2 qubits</li><li>Linearly separable</li></ul>
+      <p class="muted"><b class="accent">As a harder follow-up:</b> the same pipeline works on versicolor vs. virginica — a non-linearly-separable pair.</p>
+    </div>
+    <div class="card" style="flex:1; align-items:center; justify-content:center;">
+      <img src="setosa_versicolor_scatter.png" alt="Scatter plot of real Iris data: setosa and versicolor separated by petal length and width" style="width:100%; max-width:480px; height:auto;">
+    </div>
+  </div>
+</section>
+
+<!-- 22: animated baseline bars -->
+<section class="slide light" id="s-baseline">
+  <p class="eyebrow">Benchmarking</p>
+  <h1 class="title">Comparing to a Classical Baseline</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>Why Bother Comparing?</h3>
+      <p>No QML result means anything without a classical point of comparison on the <b>same</b> split. On a small problem like this, expect the classical model to match or beat the quantum one.</p>
+      <p class="muted">Today's QML has no proven advantage on small classical datasets.</p>
+    </div>
+    <div class="card" style="flex:1;">
+      <h3>A Typical Result (Illustrative)</h3>
+      <div style="display:flex; align-items:flex-end; gap:40px; justify-content:center; flex:1;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><span class="mono" style="font-weight:700;">95%</span><div id="bl-bar1" style="width:80px; height:0px; background:var(--maroon); border-radius:8px 8px 0 0; transition:height 1.1s cubic-bezier(.2,.8,.2,1);"></div><span class="muted">Classical SVM</span></div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><span class="mono" style="font-weight:700;">70%</span><div id="bl-bar2" style="width:80px; height:0px; background:var(--gold); border-radius:8px 8px 0 0; transition:height 1.1s cubic-bezier(.2,.8,.2,1) .15s;"></div><span class="muted">VQC</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 23: animated hybrid systems -->
+<section class="slide dark" id="s-nisq">
+  <p class="eyebrow">The Pragmatic Reality</p>
+  <h1 class="title">Hybrid Quantum-Classical Systems</h1>
+  <div class="card"><p>We are in the <b class="accent">NISQ era</b> — Noisy Intermediate-Scale Quantum. Today's processors are brilliant but noisy; we cannot rely on them to do everything.</p></div>
+  <div class="row center" style="gap:0;">
+    <div style="width:220px; display:flex; flex-direction:column; align-items:center; gap:14px; background:var(--surface-dark-2); border:2px solid var(--gold); border-radius:18px; padding:32px;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"></rect><line x1="9" y1="2" x2="9" y2="4"></line><line x1="15" y1="2" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="22"></line><line x1="15" y1="20" x2="15" y2="22"></line><line x1="2" y1="9" x2="4" y2="9"></line><line x1="2" y1="15" x2="4" y2="15"></line><line x1="20" y1="9" x2="22" y2="9"></line><line x1="20" y1="15" x2="22" y2="15"></line></svg>
+      <p style="margin:0; font-weight:700;">Classical CPU</p>
+    </div>
+    <svg width="140" height="40" viewBox="0 0 140 40"><line id="nisq-pulse" x1="10" y1="20" x2="130" y2="20" stroke="var(--gold)" stroke-width="2"></line><circle id="nisq-dot" cx="10" cy="20" r="5" fill="var(--gold)"></circle></svg>
+    <div style="width:220px; display:flex; flex-direction:column; align-items:center; gap:14px; background:var(--surface-dark-2); border:2px solid var(--gold); border-radius:18px; padding:32px;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2"></path></svg>
+      <p style="margin:0; font-weight:700;">Quantum Processor</p>
+    </div>
+  </div>
+  <p class="lede" style="text-align:center; margin:0 auto;">The CPU handles dataset prep and optimizer logic; the QPU handles state-space calculations — exchanging data, back and forth, continuously.</p>
+</section>
+
+<!-- 24 -->
+<section class="slide light" id="s-preview">
+  <p class="eyebrow">The Notebook</p>
+  <h1 class="title">What's in the Notebook</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>What the Notebook Walks Through</h3>
+      <ul>
+        <li>Build a feature map &amp; ansatz; see the hybrid loop on a toy dataset</li>
+        <li>Encode text messages; scale with MinMaxScaler</li>
+        <li>Train a VQC spam classifier</li>
+        <li>Repeat the pipeline on Iris: setosa vs. versicolor</li>
+        <li>Evaluate accuracy; visualize right vs. wrong predictions</li>
+        <li>Compare against a classical baseline</li>
+      </ul>
+    </div>
+    <div class="card fill-maroon" style="flex:1;">
+      <h3>Keep In Mind</h3>
+      <ul>
+        <li>Same pipeline every time — only the dataset changes</li>
+        <li>The feature map is fixed; only the ansatz's θ trains</li>
+        <li>A harder follow-up: try versicolor vs. virginica, a non-linearly-separable pair</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 25 -->
+<section class="slide dark" id="s-end" style="align-items:center; justify-content:center; text-align:center;">
+  <div class="card" style="align-items:center; border-color:var(--gold);">
+    <h1 class="title" style="color:#fff;">Jupyter Time!</h1>
+    <p class="lede" style="color:var(--ink-on-dark-soft);">Open the companion notebook and try it yourself.</p>
+  </div>
+</section>
+
+</div>
+
+<div id="counter">1 / 27</div>
+<div id="chrome">
+  <button class="navbtn" id="prevBtn" aria-label="Previous slide">‹</button>
+  <button class="navbtn" id="fsBtn" aria-label="Toggle fullscreen">⤢</button>
+  <button class="navbtn" id="nextBtn" aria-label="Next slide">›</button>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- Tiny real quantum-state engine (complex numbers, 2x2/4x4 unitaries) ---------- */
+  function cx(re, im){ return {re:re, im: (im===undefined?0:im)}; }
+  function cAdd(a,b){ return cx(a.re+b.re, a.im+b.im); }
+  function cMul(a,b){ return cx(a.re*b.re - a.im*b.im, a.re*b.im + a.im*b.re); }
+  function cExpI(theta){ return cx(Math.cos(theta), Math.sin(theta)); }
+  function cAbs2(a){ return a.re*a.re + a.im*a.im; }
+
+  // 2x2 matrix * 2-vector of complex numbers
+  function mat2vec(m, v){
+    return [ cAdd(cMul(m[0][0],v[0]), cMul(m[0][1],v[1])),
+             cAdd(cMul(m[1][0],v[0]), cMul(m[1][1],v[1])) ];
+  }
+  function H2(){
+    var s = 1/Math.sqrt(2);
+    return [[cx(s),cx(s)],[cx(s),cx(-s)]];
+  }
+  function Ry2(theta){
+    var c = Math.cos(theta/2), s = Math.sin(theta/2);
+    return [[cx(c), cx(-s)],[cx(s), cx(c)]];
+  }
+  function Rz2(theta){
+    return [[cExpI(-theta/2), cx(0)],[cx(0), cExpI(theta/2)]];
+  }
+
+  /* ---------- Deck navigation ---------- */
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var idx = 0;
+  var progress = document.getElementById('progress');
+  var counter = document.getElementById('counter');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var fsBtn = document.getElementById('fsBtn');
+
+  function go(n){
+    n = Math.max(0, Math.min(slides.length-1, n));
+    slides[idx].classList.remove('active');
+    idx = n;
+    slides[idx].classList.add('active');
+    progress.style.width = (((idx+1)/slides.length)*100).toFixed(2) + '%';
+    counter.textContent = (idx+1) + ' / ' + slides.length;
+    prevBtn.disabled = idx===0;
+    nextBtn.disabled = idx===slides.length-1;
+    document.body.classList.toggle('dark-slide-active', slides[idx].classList.contains('dark'));
+  }
+  prevBtn.addEventListener('click', function(){ go(idx-1); });
+  nextBtn.addEventListener('click', function(){ go(idx+1); });
+  document.addEventListener('keydown', function(e){
+    var tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown'){ go(idx+1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp'){ go(idx-1); e.preventDefault(); }
+    else if (e.key === 'f' || e.key === 'F'){ toggleFullscreen(); }
+  });
+  function toggleFullscreen(){
+    if (!document.fullscreenElement){
+      document.documentElement.requestFullscreen && document.documentElement.requestFullscreen().catch(function(){});
+    } else {
+      document.exitFullscreen && document.exitFullscreen().catch(function(){});
+    }
+  }
+  fsBtn.addEventListener('click', toggleFullscreen);
+  go(0);
+
+  /* ---------- Stage panels: click a pipeline step, see that stage's own demo ---------- */
+  function wireStagePanel(pipeId, panelId, defaultStage){
+    var pipe = document.getElementById(pipeId);
+    var panel = document.getElementById(panelId);
+    if (!pipe || !panel) return;
+    var steps = Array.prototype.slice.call(pipe.querySelectorAll('.pstep'));
+    var views = Array.prototype.slice.call(panel.querySelectorAll('.stage-view'));
+    function select(stage){
+      steps.forEach(function(s){ s.classList.toggle('on', s.getAttribute('data-stage') === stage); });
+      views.forEach(function(v){ v.classList.toggle('shown', v.getAttribute('data-view') === stage); });
+    }
+    steps.forEach(function(s){ s.addEventListener('click', function(){ select(s.getAttribute('data-stage')); }); });
+    select(defaultStage);
+  }
+  wireStagePanel('pipe-big', 'panel-big', 'dataset');
+  wireStagePanel('pipe-hybrid', 'panel-hybrid', 'preprocess');
+  wireStagePanel('pipe-workflow', 'panel-workflow', 'preprocess');
+
+
+  /* ---------- Training loop: click any step to jump to it directly ---------- */
+  (function(){
+    var rows = Array.prototype.slice.call(document.querySelectorAll('#loop-steps .loop-step'));
+    if (!rows.length) return;
+    function paint(activeIdx){
+      rows.forEach(function(r, k){
+        var circle = r.querySelector('.loop-circle');
+        if (k === activeIdx){ r.style.background = 'var(--surface-2)'; circle.style.background = 'var(--maroon-fixed)'; circle.style.color = '#fff'; }
+        else { r.style.background = 'transparent'; circle.style.background = 'var(--surface-2)'; circle.style.color = 'var(--maroon-fixed)'; }
+      });
+    }
+    rows.forEach(function(r, k){ r.addEventListener('click', function(){ paint(k); }); });
+    paint(0);
+  })();
+
+  /* ---------- Stage 1: dataset scatter (re-sample on demand) ---------- */
+  (function(){
+    var svg = document.getElementById('sv-dataset');
+    if (!svg) return;
+    var btn = document.getElementById('sv-dataset-reroll');
+    var svgNS = 'http://www.w3.org/2000/svg';
+    function render(){
+      svg.innerHTML = '';
+      for (var i = 0; i < 14; i++){
+        var cls = Math.random() < 0.5 ? 0 : 1;
+        var x = 40 + Math.random() * 340;
+        var y = 30 + Math.random() * 160;
+        var c = document.createElementNS(svgNS, 'circle');
+        c.setAttribute('cx', x.toFixed(1)); c.setAttribute('cy', y.toFixed(1)); c.setAttribute('r', 7);
+        c.setAttribute('fill', cls === 0 ? 'var(--gold-fixed)' : 'var(--maroon-fixed)');
+        c.setAttribute('opacity', '0');
+        c.style.transition = 'opacity .3s ease';
+        svg.appendChild(c);
+        (function(circle, delay){
+          setTimeout(function(){ circle.setAttribute('opacity', '0.9'); }, delay);
+        })(c, i * 35);
+      }
+    }
+    render();
+    if (btn) btn.addEventListener('click', render);
+  })();
+
+  /* ---------- Stage 2: feature extraction, live as you type — counts whatever words are actually typed ---------- */
+  (function(){
+    var input = document.getElementById('sv-feat-input');
+    if (!input) return;
+    var rawEl = document.getElementById('sv-feat-raw');
+    var wordsEl = document.getElementById('sv-feat-words');
+    function render(text){
+      rawEl.textContent = '"' + text + '"';
+      var tokens = text.toLowerCase().match(/[a-z]+/g) || [];
+      var counts = {}, order = [];
+      tokens.forEach(function(t){
+        if (!(t in counts)){ counts[t] = 0; order.push(t); }
+        counts[t]++;
+      });
+      wordsEl.innerHTML = order.length
+        ? order.slice(0, 6).map(function(w){
+            return '<div class="ctrl-row"><span class="ctrl-label">' + w + '</span><span class="ctrl-value">' + counts[w] + '</span></div>';
+          }).join('')
+        : '<p class="muted" style="margin:0;">(no words yet)</p>';
+    }
+    input.addEventListener('input', function(){ render(input.value); });
+    render(input.value);
+  })();
+
+  /* ---------- Stage 3: normalization slider ---------- */
+  (function(){
+    var slider = document.getElementById('sv-norm-slider');
+    if (!slider) return;
+    var rawEl = document.getElementById('sv-norm-raw'), barEl = document.getElementById('sv-norm-bar'), outEl = document.getElementById('sv-norm-out');
+    function render(v){
+      rawEl.textContent = v;
+      var scaled = v / 10;
+      outEl.textContent = scaled.toFixed(3);
+      barEl.style.width = (scaled * 100).toFixed(1) + '%';
+    }
+    slider.addEventListener('input', function(){ render(parseFloat(slider.value)); });
+    render(parseFloat(slider.value));
+  })();
+
+  /* ---------- Stage 4: quantum encoding, a small live Bloch sweep ---------- */
+  (function(){
+    var slider = document.getElementById('sv-enc-x');
+    if (!slider) return;
+    var xval = document.getElementById('sv-enc-xval');
+    var vec = document.getElementById('sv-enc-vec'), tip = document.getElementById('sv-enc-tip');
+    var cx0 = 80, cy0 = 80, r = 64;
+    function render(x){
+      xval.textContent = x.toFixed(2);
+      var v0 = mat2vec(H2(), [cx(1), cx(0)]);
+      var v1 = mat2vec(Rz2(x), v0);
+      var a0 = v1[0], a1 = v1[1];
+      var phase = Math.atan2(a1.im, a1.re) - Math.atan2(a0.im, a0.re);
+      var vx = cx0 + r * Math.cos(phase), vy = cy0;
+      vec.setAttribute('x2', vx.toFixed(2)); vec.setAttribute('y2', vy.toFixed(2));
+      tip.setAttribute('cx', vx.toFixed(2)); tip.setAttribute('cy', vy.toFixed(2));
+    }
+    slider.addEventListener('input', function(){ render(parseFloat(slider.value)); });
+    render(parseFloat(slider.value));
+  })();
+
+  /* ---------- Stage 6/7: measurement shots and the resulting prediction ---------- */
+  (function(){
+    var btn = document.getElementById('sv-measure-run');
+    if (!btn) return;
+    var bar0 = document.getElementById('sv-measure-0'), bar1 = document.getElementById('sv-measure-1');
+    var lab0 = document.getElementById('sv-measure-0-label'), lab1 = document.getElementById('sv-measure-1-label');
+    var predictLabel = document.getElementById('sv-predict-label');
+    function run(){
+      var count0 = 0;
+      for (var i = 0; i < 100; i++){ if (Math.random() < 0.5) count0++; }
+      var count1 = 100 - count0;
+      lab0.textContent = count0; lab1.textContent = count1;
+      bar0.style.height = (count0 * 1.1).toFixed(0) + 'px';
+      bar1.style.height = (count1 * 1.1).toFixed(0) + 'px';
+      if (predictLabel) predictLabel.textContent = count0 >= count1 ? 'Not Spam' : 'Spam';
+    }
+    btn.addEventListener('click', run);
+    run();
+  })();
+
+  /* ---------- Slide 8: live feature-map Bloch sphere ---------- */
+  (function(){
+    var slider = document.getElementById('fm-x');
+    if (!slider) return;
+    var xval = document.getElementById('fm-xval');
+    var vec = document.getElementById('fm-vec');
+    var tip = document.getElementById('fm-tip');
+    var stateEl = document.getElementById('fm-state');
+    var cx0 = 120, cy0 = 120, r = 96;
+    function render(x){
+      xval.textContent = x.toFixed(2);
+      // zz_feature_map-style: H then Rz(x) on |0>. H·Rz(x)|0> sits on the Bloch
+      // EQUATOR for every x (P(0)=P(1)=0.5 always — Rz only changes relative phase),
+      // so the vector must sweep horizontally and never tilt toward a pole.
+      var v0 = mat2vec(H2(), [cx(1), cx(0)]);
+      var v1 = mat2vec(Rz2(x), v0);
+      var a0 = v1[0], a1 = v1[1];
+      var phase = Math.atan2(a1.im, a1.re) - Math.atan2(a0.im, a0.re);
+      var vx = cx0 + r * Math.cos(phase);
+      var vy = cy0; // stays on the equator line drawn in the SVG, for every x
+      vec.setAttribute('x2', vx.toFixed(2));
+      vec.setAttribute('y2', vy.toFixed(2));
+      tip.setAttribute('cx', vx.toFixed(2));
+      tip.setAttribute('cy', vy.toFixed(2));
+      stateEl.textContent = 'ψ⟩ = 0.707∣0⟩ + 0.707·e^(' + x.toFixed(2) + 'i)∣1⟩';
+    }
+    slider.addEventListener('input', function(){ render(parseFloat(slider.value)); });
+    render(parseFloat(slider.value));
+  })();
+
+  /* ---------- Slide 10: live ZZ worked example — direct toggles, state recomputed on every change ---------- */
+  (function(){
+    var hBox = document.getElementById('zz-toggle-h');
+    if (!hBox) return;
+    var zzBox = document.getElementById('zz-toggle-zz');
+    var stepEl = document.getElementById('zz-step');
+    var stateEl = document.getElementById('zz-state');
+    var barsEl = document.getElementById('zz-bars');
+    var labels = ['00','01','10','11'];
+
+    function kron(v1, v2){
+      var out = [];
+      for (var i=0;i<v1.length;i++) for (var j=0;j<v2.length;j++) out.push(cMul(v1[i], v2[j]));
+      return out;
+    }
+    function computeState(){
+      var v = [cx(1),cx(0),cx(0),cx(0)]; // |00>
+      if (hBox.checked){
+        var h0 = mat2vec(H2(), [cx(1),cx(0)]);
+        v = kron(h0, h0);
+      }
+      if (zzBox.checked){
+        var signs = [1,-1,-1,1]; // |00>,|11> -> +1 ; |01>,|10> -> -1
+        v = v.map(function(a,i){ return cx(a.re*signs[i], a.im*signs[i]); });
+      }
+      return v;
+    }
+    function paint(){
+      var v = computeState();
+      var h = hBox.checked, zz = zzBox.checked;
+      var desc;
+      if (!h && !zz) desc = 'Neither gate applied — still the initial state ∣00⟩.';
+      else if (h && !zz) desc = 'H⊗H only — equal superposition, no phase pattern yet.';
+      else if (!h && zz) desc = 'ZZ only, on ∣00⟩ — no visible change: ∣00⟩ is already a +1 eigenstate of Z⊗Z.';
+      else desc = 'Both gates on — equal superposition with the ZZ phase pattern applied.';
+      stepEl.textContent = desc;
+      var parts = v.map(function(a,i){
+        var amp = (a.re>=0?'+':'') + a.re.toFixed(2) + (Math.abs(a.im)>0.001 ? (a.im>=0?'+':'') + a.im.toFixed(2)+'i' : '');
+        return amp + '∣' + labels[i] + '⟩';
+      }).filter(function(p,i){ return cAbs2(v[i]) > 0.0001; });
+      stateEl.textContent = 'ψ⟩ = ' + (parts.length ? parts.join(' ') : '0');
+      barsEl.innerHTML = '';
+      v.forEach(function(a,i){
+        var prob = cAbs2(a);
+        var row = document.createElement('div');
+        var neg = a.re < -0.001;
+        row.innerHTML = '<div class="ctrl-row"><span class="ctrl-label">∣' + labels[i] + '⟩</span><span class="ctrl-value">' + (a.re>=0?'+':'') + a.re.toFixed(2) + '</span></div>' +
+          '<div class="bar-track"><div class="bar-fill" style="width:' + (Math.sqrt(prob)*100).toFixed(1) + '%; background:' + (neg ? 'var(--maroon-fixed)' : 'var(--gold-fixed)') + ';"></div></div>';
+        barsEl.appendChild(row);
+      });
+    }
+    hBox.addEventListener('change', paint);
+    zzBox.addEventListener('change', paint);
+    paint();
+  })();
+
+  /* ---------- Slide 12: live ansatz Ry(theta) ---------- */
+  (function(){
+    var slider = document.getElementById('an-theta');
+    if (!slider) return;
+    var tval = document.getElementById('an-tval');
+    var a0El = document.getElementById('an-a0'), a1El = document.getElementById('an-a1');
+    var a0bar = document.getElementById('an-a0bar'), a1bar = document.getElementById('an-a1bar');
+    var p0El = document.getElementById('an-p0'), p1El = document.getElementById('an-p1');
+    var vec = document.getElementById('an-vec'), tip = document.getElementById('an-tip');
+    var cx0=120, cy0=120, r=96;
+    function render(theta){
+      var v = mat2vec(Ry2(theta), [cx(1), cx(0)]);
+      var a0 = v[0].re, a1 = v[1].re; // Ry keeps amplitudes real
+      var p0 = a0*a0, p1 = a1*a1;
+      tval.textContent = theta.toFixed(2) + ' rad';
+      a0El.textContent = a0.toFixed(3); a1El.textContent = a1.toFixed(3);
+      a0bar.style.width = (p0*100).toFixed(1)+'%'; a1bar.style.width = (p1*100).toFixed(1)+'%';
+      p0El.textContent = (p0*100).toFixed(1)+'%'; p1El.textContent = (p1*100).toFixed(1)+'%';
+      var vx = cx0 + r*Math.sin(theta), vy = cy0 - r*Math.cos(theta);
+      vec.setAttribute('x2', vx.toFixed(2)); vec.setAttribute('y2', vy.toFixed(2));
+      tip.setAttribute('cx', vx.toFixed(2)); tip.setAttribute('cy', vy.toFixed(2));
+    }
+    slider.addEventListener('input', function(){ render(parseFloat(slider.value)); });
+    render(parseFloat(slider.value));
+  })();
+
+  /* ---------- Slide 17: live CountVectorizer ---------- */
+  (function(){
+    var input = document.getElementById('cv-input');
+    if (!input) return;
+    var wordsEl = document.getElementById('cv-words');
+    var vecEl = document.getElementById('cv-vector');
+    var vocab = ['win','money','meeting','tomorrow'];
+    function render(text){
+      var lower = text.toLowerCase();
+      var counts = vocab.map(function(w){ return (lower.split(w).length - 1); });
+      wordsEl.innerHTML = vocab.map(function(w,i){
+        return '<div class="ctrl-row"><span class="ctrl-label">"' + w + '"</span><span class="ctrl-value">' + counts[i] + '</span></div>';
+      }).join('');
+      vecEl.textContent = '[' + counts.join(', ') + ']';
+    }
+    input.addEventListener('input', function(){ render(input.value); });
+    render(input.value);
+  })();
+
+  /* ---------- Slide 18: live MinMaxScaler ---------- */
+  (function(){
+    var slider = document.getElementById('mms-slider');
+    if (!slider) return;
+    var rawEl = document.getElementById('mms-raw');
+    var outEl = document.getElementById('mms-out');
+    var barEl = document.getElementById('mms-bar');
+    function render(v){
+      rawEl.textContent = v;
+      var scaled = v/10;
+      outEl.textContent = scaled.toFixed(3);
+      barEl.style.width = (scaled*100).toFixed(1)+'%';
+    }
+    slider.addEventListener('input', function(){ render(parseFloat(slider.value)); });
+    render(parseFloat(slider.value));
+  })();
+
+  /* ---------- Slide 22: animated baseline bars (plays once when slide becomes active) ---------- */
+  (function(){
+    var slideEl = document.getElementById('s-baseline');
+    if (!slideEl) return;
+    var played = false;
+    var bar1 = document.getElementById('bl-bar1'), bar2 = document.getElementById('bl-bar2');
+    var obs = new MutationObserver(function(){
+      if (slideEl.classList.contains('active') && !played){
+        played = true;
+        requestAnimationFrame(function(){ bar1.style.height = '228px'; bar2.style.height = '168px'; });
+      }
+      if (!slideEl.classList.contains('active')){ played = false; bar1.style.height='0px'; bar2.style.height='0px'; }
+    });
+    obs.observe(slideEl, {attributes:true, attributeFilter:['class']});
+  })();
+
+  /* ---------- Slide 23: pulsing connector animation — only runs while that slide is active ---------- */
+  (function(){
+    var dot = document.getElementById('nisq-dot');
+    var slideEl = document.getElementById('s-nisq');
+    if (!dot || !slideEl) return;
+    var t = 0, dir = 1, timer = null;
+    function tick(){
+      t += dir * 2;
+      if (t > 120){ dir = -1; }
+      if (t < 10){ dir = 1; }
+      dot.setAttribute('cx', t);
+    }
+    function start(){ if (!timer) timer = setInterval(tick, 20); }
+    function stop(){ if (timer){ clearInterval(timer); timer = null; } }
+    var obs = new MutationObserver(function(){
+      if (slideEl.classList.contains('active')) start(); else stop();
+    });
+    obs.observe(slideEl, {attributes:true, attributeFilter:['class']});
+    if (slideEl.classList.contains('active')) start();
+  })();
+
+})();
+</script>

@@ -1,0 +1,898 @@
+<meta charset="utf-8">
+<title>Grover's Algorithm</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* No prefers-color-scheme/data-theme switching: this deck's look is a fixed design
+   (each slide is explicitly .light or .dark), not a theme that should follow the
+   presenter's OS setting — a projector needs to render the same way every time. */
+:root{
+  --bg:#FBF9F6; --surface:#FFFFFF; --surface-2:#F3ECE4; --surface-dark:#241013; --surface-dark-2:#2E1519;
+  --ink:#2B1A1D; --ink-soft:#6B5255; --ink-faint:#7D6164;
+  --ink-on-dark:#F6EDEE; --ink-on-dark-soft:#CBB2B5;
+  --maroon:#6A171F; --maroon-deep:#4A0F15; --gold:#C9A227; --gold-deep:#8A6B1A;
+  --maroon-fixed:#6A171F; --maroon-deep-fixed:#4A0F15; --gold-fixed:#C9A227; --gold-deep-fixed:#8A6B1A;
+  --ring:#E6DCD3; --ring-dark:#4A2A2E;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'IBM Plex Sans', Arial, sans-serif;
+  overflow:hidden; padding:0;
+}
+#deck{ position:relative; width:100%; height:100%; }
+.slide{
+  position:absolute; inset:0; display:none; flex-direction:column;
+  padding:clamp(20px,4vw,72px) clamp(16px,6vw,96px) clamp(60px,6vw,88px);
+  gap:clamp(14px,2vw,28px); overflow:auto;
+}
+.slide.active{ display:flex; animation:rise .35s ease both; }
+@media (prefers-reduced-motion: reduce){ .slide.active{ animation:none } }
+@keyframes rise{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
+.hero-slide{ isolation:isolate; }
+.hero-art{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; opacity:.78; animation:art-breathe 8s ease-in-out infinite alternate; }
+.hero-slide::after{ content:""; position:absolute; inset:0; z-index:0; background:linear-gradient(90deg,rgba(36,16,19,.94) 0%,rgba(36,16,19,.82) 34%,rgba(36,16,19,.16) 78%,rgba(36,16,19,.14) 100%); pointer-events:none; }
+.hero-slide > :not(.hero-art){ position:relative; z-index:1; }
+@keyframes art-breathe{ from{filter:brightness(.92) saturate(.94);transform:scale(1)} to{filter:brightness(1.06) saturate(1.08);transform:scale(1.035)} }
+@media (prefers-reduced-motion: reduce){ .hero-art{ animation:none } }
+
+.slide.light{ background:var(--bg); color:var(--ink); }
+.slide.dark{ background:var(--surface-dark); color:var(--ink-on-dark); }
+
+.eyebrow{ font-size:clamp(11px,1.1vw,14px); font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-deep); margin:0; }
+.dark .eyebrow{ color:var(--gold); }
+h1.title{ font-family:'Libre Baskerville', Georgia, serif; font-weight:700; font-size:clamp(28px,4.2vw,52px); line-height:1.14; margin:0; color:var(--maroon); }
+.dark h1.title{ color:#FFFFFF; }
+h1.hero{ font-size:clamp(34px,6vw,84px); }
+p.lede{ font-size:clamp(14px,1.5vw,22px); line-height:1.5; color:var(--ink-soft); max-width:62ch; margin:0; }
+.dark p.lede{ color:var(--ink-on-dark-soft); }
+p.section-tag{ font-size:clamp(10px,1vw,13px); font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--gold-deep); margin:0 0 -6px; }
+
+.row{ display:flex; gap:clamp(14px,2vw,32px); flex:1 1 auto; min-height:0; }
+.row.center{ align-items:center; justify-content:center; }
+.row.wrap{ flex-wrap:wrap; }
+.col{ flex:1; display:flex; flex-direction:column; gap:12px; min-width:0; }
+
+.card{
+  background:var(--surface); border:1px solid var(--ring); border-radius:18px;
+  padding:clamp(16px,2vw,32px); display:flex; flex-direction:column; gap:12px;
+  box-shadow:0 1px 2px rgba(0,0,0,.04);
+}
+.dark .card{ background:var(--surface-dark-2); border-color:var(--ring-dark); }
+.card.fill-maroon{ background:var(--maroon-fixed); color:#fff; border-color:transparent; }
+.card.fill-maroon h3, .card.fill-maroon b{ color:#fff; }
+.card.fill-maroon p, .card.fill-maroon ul, .card.fill-maroon li{ color:#fff; }
+.card.fill-gold{ background:var(--gold-fixed); color:var(--maroon-deep-fixed); border-color:transparent; }
+.card.fill-gold h3, .card.fill-gold b{ color:var(--maroon-deep-fixed); }
+.card.fill-gold p, .card.fill-gold ul, .card.fill-gold li{ color:var(--maroon-deep-fixed); }
+.card h3{ font-size:clamp(15px,1.5vw,22px); font-weight:700; color:var(--maroon); margin:0; }
+.dark .card h3{ color:var(--gold); }
+.card p{ font-size:clamp(12.5px,1.25vw,17px); line-height:1.5; color:var(--ink); margin:0; }
+.dark .card p{ color:var(--ink-on-dark); }
+.card ul{ margin:0; padding-left:1.1em; font-size:clamp(12.5px,1.25vw,17px); line-height:1.6; color:var(--ink); }
+.dark .card ul{ color:var(--ink-on-dark); }
+.card .muted{ color:var(--ink-faint); font-style:italic; font-size:clamp(11px,1.05vw,14px); }
+.card.scroll{ overflow:auto; }
+
+b.accent{ color:var(--maroon); }
+.dark b.accent{ color:var(--gold); }
+.mono{ font-family:'IBM Plex Mono','Courier New',monospace; }
+.serif-eq{ font-family:'Libre Baskerville', Georgia, serif; font-style:italic; font-weight:700; color:var(--maroon); }
+.dark .serif-eq{ color:#fff; }
+
+.pill{ display:inline-flex; align-items:center; background:var(--gold-fixed); color:var(--maroon-deep-fixed); font-weight:700; font-size:clamp(10px,1vw,13px); letter-spacing:.08em; text-transform:uppercase; padding:5px 14px; border-radius:999px; width:fit-content; }
+
+.codecard{ background:var(--surface-dark); border-radius:16px; padding:16px 20px; overflow:auto; }
+.codecard pre{ margin:0; color:#F0E4E6; font-family:'IBM Plex Mono','Courier New',monospace; font-size:clamp(11px,1.05vw,14px); line-height:1.6; white-space:pre; }
+.codecard .kw{ color:#E3C465; }
+.codecard .fn{ color:#9FD4C8; }
+.codecard .cm{ color:#8A7174; font-style:italic; }
+.codecard .st{ color:#D9A6AC; }
+
+/* Pipeline row — steps are buttons the presenter clicks to drive what the stage panel shows */
+.pipeline{ display:flex; align-items:stretch; gap:10px; flex-wrap:nowrap; }
+.pstep{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; background:var(--surface); border:1px solid var(--ring); border-radius:14px; padding:14px 8px; text-align:center; transition:background .2s, color .2s, transform .2s, border-color .2s; font:inherit; cursor:pointer; }
+.pstep:hover{ border-color:var(--maroon-fixed); transform:translateY(-2px); }
+.pstep .n{ font-size:clamp(14px,1.6vw,22px); font-weight:700; color:var(--maroon); }
+.pstep .t{ font-size:clamp(10px,1vw,14px); font-weight:600; }
+.pstep .s{ font-size:clamp(9px,.8vw,12px); font-style:italic; color:var(--ink-faint); }
+.pstep.on{ background:var(--maroon-fixed); border-color:var(--maroon-fixed); color:#fff; transform:scale(1.04); }
+.pstep.on .n{ color:#fff; }
+.pstep.on .s{ color:#F0DCDE; }
+.parrow{ display:flex; align-items:center; color:var(--gold-deep); font-size:20px; flex:0 0 auto; }
+
+.stage-panel{ position:relative; min-height:0; }
+.stage-view{ display:none; }
+.stage-view.shown{ display:flex; flex-direction:column; gap:12px; animation:rise .3s ease both; }
+.hint{ font-size:clamp(11px,1vw,14px); color:var(--ink-soft); text-align:center; margin:0; }
+.dark .hint{ color:var(--ink-on-dark-soft); }
+
+.ctrl-row{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+.ctrl-label{ font-size:clamp(12px,1.1vw,15px); font-weight:600; color:var(--ink-soft); }
+.ctrl-value{ font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; font-size:clamp(14px,1.6vw,20px); font-weight:600; color:var(--maroon); }
+input[type="range"]{ -webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:999px; background:var(--ring); outline:none; margin:2px 0; }
+input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:24px; height:24px; border-radius:50%; background:var(--maroon); border:4px solid var(--surface); box-shadow:0 1px 4px rgba(0,0,0,.35); cursor:pointer; }
+input[type="range"]::-moz-range-thumb{ width:16px; height:16px; border-radius:50%; background:var(--maroon); border:4px solid var(--surface); cursor:pointer; }
+.ticks{ display:flex; justify-content:space-between; font-size:clamp(10px,.9vw,12px); color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; }
+
+.bar-track{ height:10px; border-radius:999px; background:var(--surface-2); overflow:hidden; }
+.bar-fill{ height:100%; border-radius:999px; transition:width .25s ease; }
+
+.prob-tile{ flex:1; background:var(--surface-2); border-radius:14px; padding:12px 16px; display:flex; flex-direction:column; gap:2px; }
+.prob-tile .k{ font-size:clamp(11px,1vw,13px); color:var(--ink-soft); }
+.prob-tile .v{ font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; font-size:clamp(18px,2.2vw,30px); font-weight:600; }
+
+table.cmp{ border-collapse:collapse; width:100%; font-size:clamp(12.5px,1.2vw,18px); }
+table.cmp th{ background:var(--maroon); color:#fff; padding:9px 13px; text-align:left; }
+table.cmp td{ padding:9px 13px; border-bottom:1px solid var(--ring); }
+table.cmp tr:nth-child(even) td{ background:var(--surface-2); }
+table.cmp td:first-child{ font-weight:700; color:var(--maroon); }
+
+button.playbtn{
+  font-family:'IBM Plex Sans', Arial, sans-serif; font-weight:600; font-size:14px;
+  background:var(--maroon-fixed); color:#fff; border:none; border-radius:999px; padding:10px 20px;
+  cursor:pointer; width:fit-content; display:inline-flex; align-items:center; gap:8px;
+}
+button.playbtn:hover{ filter:brightness(1.08); }
+
+/* Grover box-picker: clickable boxes representing search items */
+.boxrow{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+.gbox{ flex:1; min-width:56px; max-width:120px; aspect-ratio:1; border-radius:14px; border:2px solid var(--ring); background:var(--surface); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; font:inherit; transition:background .2s, border-color .2s, transform .2s; }
+.gbox:hover{ border-color:var(--maroon-fixed); transform:translateY(-2px); }
+.gbox .lbl{ font-family:'IBM Plex Mono',monospace; font-size:clamp(13px,1.6vw,20px); font-weight:600; color:var(--maroon); }
+.gbox .tag{ font-size:10px; color:var(--ink-faint); }
+.gbox.marked{ background:var(--gold-fixed); border-color:var(--gold-fixed); }
+.gbox.marked .lbl, .gbox.marked .tag{ color:var(--maroon-deep-fixed); }
+
+/* Chrome */
+#progress{ position:fixed; top:0; left:0; height:4px; background:var(--maroon); z-index:50; transition:width .3s ease; }
+.dark-slide-active #progress{ background:var(--gold); }
+#chrome{ position:fixed; right:18px; bottom:16px; display:flex; align-items:center; gap:10px; z-index:50; }
+#counter{ position:fixed; left:18px; bottom:16px; font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--ink-faint); z-index:50; }
+.navbtn{
+  width:42px; height:42px; border-radius:50%; border:1px solid var(--ring); background:var(--surface);
+  color:var(--maroon); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+.navbtn:hover{ background:var(--maroon); color:#fff; }
+.navbtn:disabled{ opacity:.35; cursor:default; }
+.navbtn:disabled:hover{ background:var(--surface); color:var(--maroon); }
+</style>
+
+<div id="progress"></div>
+<div id="deck">
+
+<!-- 1 -->
+<section class="slide dark active hero-slide" id="s-cover" style="align-items:flex-start; justify-content:center;">
+  <img class="hero-art" src="grover-amplitude-hero.png" alt="Generated illustration of four quantum state paths, with the marked target glowing brighter as amplitude is amplified">
+  <span class="pill">Interactive Guide</span>
+  <h1 class="title hero">Grover's Algorithm</h1>
+  <p class="lede" style="font-size:clamp(15px,1.8vw,24px); max-width:50ch;">How it works, where it's used, and how it's built in Qiskit — every circuit on these slides really runs.</p>
+  <p class="lede" style="margin-top:auto; font-size:clamp(12px,1.1vw,15px);">From an equal guess across every item to one answer, found in about √N steps instead of N.</p>
+</section>
+
+<!-- Part 1 opener -->
+<!-- 2 -->
+<section class="slide light" id="s-search-problem">
+  <p class="section-tag">Part 1 · How It Works</p>
+  <p class="eyebrow">Introduction to Quantum Search</p>
+  <h1 class="title">What Is a Search Problem?</h1>
+  <div class="row">
+    <div class="card" style="flex:1">
+      <h3>Search Space and Target</h3>
+      <p>A search problem has a <b class="accent">search space</b> — every candidate answer — and one or more <b class="accent">target solutions</b> hiding somewhere inside it.</p>
+      <p>Imagine four boxes, labeled 00, 01, 10, 11. Exactly one hides the answer, and nothing on the outside tells you which.</p>
+    </div>
+    <div class="card fill-maroon" style="flex:1">
+      <h3>Unstructured Search</h3>
+      <ul>
+        <li>Nothing sorts or orders the candidates for you</li>
+        <li>No shortcut like binary search applies — there's no "higher or lower" to follow</li>
+        <li>The only classical option is <b>brute force</b>: check candidates one at a time until the answer turns up</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide light" id="s-faster">
+  <p class="eyebrow">Classical Search vs. Quantum Search</p>
+  <h1 class="title">Classical O(N) vs. Quantum O(√N)</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>Linear and Exhaustive Search</h3>
+      <p>A classical computer checks candidates one by one — a <b class="accent">linear search</b>. In the worst case, that's an <b class="accent">exhaustive search</b> through all N candidates before finding the answer.</p>
+      <p>Classical worst-case complexity: <b class="accent">O(N)</b>.</p>
+    </div>
+    <div class="card fill-maroon" style="flex:1;">
+      <h3>Quadratic Speedup</h3>
+      <p>Grover's algorithm needs only about <b>O(√N)</b> steps — a <b>quadratic speedup</b>, not an exponential one.</p>
+      <p class="muted" style="color:#F0DCDE;">Quadratic means: to search 4× more candidates, you only need about 2× more steps.</p>
+    </div>
+  </div>
+  <table class="cmp">
+    <tr><th>List size (N)</th><th>Classical checks (worst case)</th><th>Grover iterations</th></tr>
+    <tr><td>4</td><td>4</td><td>1</td></tr>
+    <tr><td>100</td><td>100</td><td>~8</td></tr>
+    <tr><td>10,000</td><td>10,000</td><td>~79</td></tr>
+    <tr><td>1,000,000</td><td>1,000,000</td><td>~785</td></tr>
+  </table>
+  <p class="lede">The gap barely matters at N = 4. It's enormous by N = 1,000,000 — the advantage grows with the problem, which is exactly when it helps most.</p>
+</section>
+
+<!-- 4 -->
+<section class="slide light" id="s-overview">
+  <p class="eyebrow">Overview</p>
+  <h1 class="title">Grover's Algorithm, at a Glance</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>Origin and Purpose</h3>
+      <p>Published by <b class="accent">Lov Grover in 1996</b>, the algorithm was designed for exactly one job: searching an unstructured space faster than any classical method can, provably.</p>
+      <p>It doesn't guess the answer directly — it <b class="accent">amplifies the probability</b> of measuring the correct one.</p>
+    </div>
+    <div class="card fill-maroon" style="flex:1;">
+      <h3>The Four Moving Parts</h3>
+      <ul>
+        <li><b>Initialize</b> — spread probability equally across every candidate</li>
+        <li><b>Oracle</b> — mark the correct answer, invisibly</li>
+        <li><b>Diffuser</b> — turn that mark into a real probability gain</li>
+        <li><b>Measure</b> — read out the answer after the right number of rounds</li>
+      </ul>
+    </div>
+  </div>
+  <p class="lede">The rest of this section walks through each of these four parts, one at a time, with a live simulation for every step.</p>
+</section>
+
+<!-- 5 -->
+<section class="slide light" id="s-formulation">
+  <p class="eyebrow">Problem Formulation</p>
+  <h1 class="title">Setting Up the Search Space</h1>
+  <div class="row">
+    <div class="col" style="flex:1;">
+      <div class="card">
+        <h3>Candidates as Binary States</h3>
+        <p>Every candidate is a binary string: <b class="accent">n</b> qubits represent <b class="accent">N = 2ⁿ</b> candidates at once. 2 qubits ↔ 4 candidates; 3 qubits ↔ 8 candidates.</p>
+      </div>
+      <div class="card">
+        <h3>The Search Function</h3>
+        <p>A function f(x) labels each candidate: f(x) = 1 if x is a correct answer (<b class="accent">marked</b>), f(x) = 0 otherwise (<b class="accent">unmarked</b>). A problem can have one marked state or several — call the count <b class="accent">M</b>.</p>
+      </div>
+    </div>
+    <div class="card fill-gold" style="flex:0.9; align-items:center; justify-content:center; text-align:center;">
+      <h3>Example</h3>
+      <p style="font-size:clamp(13px,1.3vw,18px);">Searching for <span class="mono" style="font-weight:700;">∣101⟩</span> among 8 possible states</p>
+      <p class="serif-eq" style="font-size:22px;">n = 3 qubits, N = 8, M = 1</p>
+      <p style="font-size:13px;">f(101) = 1, f(x) = 0 for every other 3-bit string</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide light" id="s-oracle-concept">
+  <p class="eyebrow">The Oracle</p>
+  <h1 class="title">What Is a Quantum Oracle?</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>From Boolean Function to Phase Flip</h3>
+      <p>A classical oracle would just return f(x) — a yes/no answer. A <b class="accent">quantum phase oracle</b> does something subtler: it leaves the probability of measuring ∣x⟩ completely unchanged, but flips the <b class="accent">sign</b> of its amplitude whenever x is marked.</p>
+      <p class="serif-eq" style="font-size:clamp(18px,2vw,26px); text-align:center;">O<sub>f</sub>∣x⟩ = (−1)^f(x) ∣x⟩</p>
+    </div>
+    <div class="card fill-maroon" style="flex:1;">
+      <h3>Phase Marking &amp; Phase Kickback</h3>
+      <p>Because probability depends on amplitude <i>squared</i>, that minus sign is invisible to an immediate measurement — nothing to see yet.</p>
+      <p>This hidden flip is called <b>phase marking</b>. Constructing it from ordinary gates (rather than reading f(x) out loud) relies on a trick called <b>phase kickback</b>, covered next.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7: LIVE oracle demo -->
+<section class="slide light" id="s-oracle-build">
+  <p class="eyebrow">Building the Oracle</p>
+  <h1 class="title">Marking a State With Gates</h1>
+  <div class="row">
+    <div class="col" style="flex:0.9;">
+      <div class="card">
+        <h3>Pick the Marked Box</h3>
+        <div class="boxrow" id="ob-boxes">
+          <button class="gbox" data-i="0"><span class="lbl">00</span><span class="tag">box 0</span></button>
+          <button class="gbox" data-i="1"><span class="lbl">01</span><span class="tag">box 1</span></button>
+          <button class="gbox marked" data-i="2"><span class="lbl">10</span><span class="tag">box 2</span></button>
+          <button class="gbox" data-i="3"><span class="lbl">11</span><span class="tag">box 3</span></button>
+        </div>
+        <p class="hint">Flip any qubit whose target bit is 0, apply a controlled-Z, then flip those qubits back — the net effect marks only the chosen box.</p>
+      </div>
+    </div>
+    <div class="col" style="flex:1;">
+      <div class="card" style="flex:1;">
+        <h3>Amplitude Before → After the Oracle</h3>
+        <div id="ob-bars" style="display:flex; flex-direction:column; gap:10px;"></div>
+        <p class="muted">Every probability stays at 25% — only the marked box's amplitude turns negative.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide light" id="s-diffuser-concept">
+  <p class="eyebrow">The Diffuser</p>
+  <h1 class="title">The Diffusion Operator</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>Inversion About the Mean</h3>
+      <p>The diffuser reflects every amplitude about their shared <b class="accent">average</b>. Once one amplitude is negative, the average sits closer to the other, positive ones — so reflecting about it pushes the marked amplitude up and the rest down.</p>
+    </div>
+    <div class="card fill-maroon" style="flex:1;">
+      <h3>Mathematical Form</h3>
+      <p class="serif-eq" style="font-size:clamp(18px,2vw,26px); text-align:center; color:#fff;">D = 2∣s⟩⟨s∣ − I</p>
+      <p>∣s⟩ is the equal-superposition state. Geometrically, D reflects the state vector about ∣s⟩ — the same "fold about the average" idea, expressed as an operator.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 9: LIVE diffuser demo -->
+<section class="slide light" id="s-diffuser-build">
+  <p class="eyebrow">Building the Diffuser</p>
+  <h1 class="title">Amplifying the Marked Amplitude</h1>
+  <div class="row">
+    <div class="col" style="flex:0.9;">
+      <div class="card">
+        <h3>Pick the Marked Box</h3>
+        <div class="boxrow" id="db-boxes">
+          <button class="gbox" data-i="0"><span class="lbl">00</span><span class="tag">box 0</span></button>
+          <button class="gbox" data-i="1"><span class="lbl">01</span><span class="tag">box 1</span></button>
+          <button class="gbox marked" data-i="2"><span class="lbl">10</span><span class="tag">box 2</span></button>
+          <button class="gbox" data-i="3"><span class="lbl">11</span><span class="tag">box 3</span></button>
+        </div>
+        <p class="hint">Built from Hadamards, X gates, and a multi-controlled phase flip — then the Hadamards and X gates undo themselves around that one phase flip.</p>
+      </div>
+    </div>
+    <div class="col" style="flex:1;">
+      <div class="card" style="flex:1;">
+        <h3>After the Oracle + Diffuser</h3>
+        <div id="db-bars" style="display:flex; flex-direction:column; gap:10px;"></div>
+        <p class="muted">One pass of oracle-then-diffuser already pulls most of the probability onto the marked box.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide light" id="s-combine">
+  <p class="eyebrow">Amplitude Amplification</p>
+  <h1 class="title">Combining Oracle and Diffuser</h1>
+  <div class="card"><p><b class="accent">Interference does the real work.</b> The oracle sets up destructive interference for the unmarked amplitudes and constructive interference for the marked one; the diffuser is what actually converts that setup into a measurable probability shift.</p></div>
+  <div class="row">
+    <div class="card" style="flex:1; align-items:center; text-align:center;">
+      <h3>One Grover Iteration</h3>
+      <p class="serif-eq" style="font-size:22px;">G = D · O</p>
+      <p>Apply the oracle, then the diffuser — that pair is the <b class="accent">Grover operator</b>, G.</p>
+    </div>
+    <div class="card fill-maroon" style="flex:1; align-items:center; text-align:center;">
+      <h3>Repeated Iterations</h3>
+      <p>Apply G again and again: G, G², G³, … Each application rotates more probability onto the marked state — up to a point, explored next.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 11: LIVE amplitude amplification centerpiece -->
+<section class="slide light" id="s-live">
+  <p class="eyebrow">Amplitude Amplification</p>
+  <h1 class="title">Grover's Operator, Live</h1>
+  <div class="row">
+    <div class="col" style="flex:0.85;">
+      <div class="card">
+        <h3>Pick the Marked Box</h3>
+        <div class="boxrow" id="gv-boxes">
+          <button class="gbox" data-i="0"><span class="lbl">00</span><span class="tag">box 0</span></button>
+          <button class="gbox" data-i="1"><span class="lbl">01</span><span class="tag">box 1</span></button>
+          <button class="gbox marked" data-i="2"><span class="lbl">10</span><span class="tag">box 2</span></button>
+          <button class="gbox" data-i="3"><span class="lbl">11</span><span class="tag">box 3</span></button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ctrl-row"><span class="ctrl-label">Grover iterations</span><span class="ctrl-value" id="gv-iter-val">0</span></div>
+        <input type="range" id="gv-iter" min="0" max="6" step="1" value="0">
+        <div class="ticks"><span>0</span><span>3</span><span>6</span></div>
+        <p class="hint" id="gv-note">No iterations yet — every box is equally likely.</p>
+      </div>
+    </div>
+    <div class="col" style="flex:1;">
+      <div class="card" style="flex:1;">
+        <h3>Probability by Box</h3>
+        <div id="gv-bars" style="display:flex; flex-direction:column; gap:12px; margin-top:6px;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide light" id="s-worked4">
+  <p class="eyebrow">Worked Example</p>
+  <h1 class="title">Four Boxes, One Iteration</h1>
+  <table class="cmp">
+    <tr><th>Step</th><th>Probability of the marked box</th></tr>
+    <tr><td>Start (superposition)</td><td>25%</td></tr>
+    <tr><td>After the oracle</td><td>25% (sign flipped, probability unchanged)</td></tr>
+    <tr><td>After the diffuser — 1 full iteration</td><td>~100%</td></tr>
+  </table>
+  <p class="lede">One Grover iteration takes the marked box from a 1-in-4 guess to an almost certain answer — the same numbers the live slide and the companion notebook both compute.</p>
+</section>
+
+<!-- 13: geometric picture, N-generalized -->
+<section class="slide light" id="s-geometry">
+  <p class="eyebrow">Why Amplitude Amplification Works</p>
+  <h1 class="title">Grover Rotates Toward the Answer</h1>
+  <p class="lede">The state lives in a two-dimensional plane: one direction for the marked answer, one for all unmarked answers together. Each iteration rotates it by 2θ.</p>
+  <div class="row">
+    <div class="card" style="flex:1.1;align-items:center;justify-content:center;">
+      <svg viewBox="0 0 360 280" role="img" aria-labelledby="geo-title geo-desc" style="width:100%;max-width:480px;height:auto;">
+        <title id="geo-title">Grover state vector rotation</title>
+        <desc id="geo-desc">A vector rotates from the unmarked direction toward the marked direction as Grover iterations increase.</desc>
+        <line x1="50" y1="220" x2="320" y2="220" stroke="#9b8586" stroke-width="2" />
+        <line x1="50" y1="220" x2="50" y2="28" stroke="#9b8586" stroke-width="2" />
+        <text x="235" y="248" fill="#6b5255" font-size="14">unmarked states</text>
+        <text x="16" y="25" fill="#6b5255" font-size="14">marked</text>
+        <path d="M100 220 A50 50 0 0 0 99 210" fill="none" stroke="#c9a227" stroke-width="3" />
+        <line x1="50" y1="220" x2="260" y2="220" stroke="#d6c9c1" stroke-dasharray="5 5" />
+        <line id="geo-vector" x1="50" y1="220" x2="97" y2="138" stroke="#6a171f" stroke-width="5" stroke-linecap="round" style="transition:all .55s cubic-bezier(.2,.8,.2,1);" />
+        <circle id="geo-tip" cx="97" cy="138" r="8" fill="#c9a227" style="transition:all .55s cubic-bezier(.2,.8,.2,1);" />
+        <text id="geo-angle" x="75" y="196" fill="#4a0f15" font-size="14" font-weight="700">θ</text>
+      </svg>
+    </div>
+    <div class="card" style="flex:1;">
+      <h3>Explore the rotation</h3>
+      <div class="ctrl-row"><label class="ctrl-label" for="geo-size">Search space size N</label><span id="geo-size-label" class="ctrl-value">4</span></div>
+      <input id="geo-size" type="range" min="4" max="256" step="4" value="4">
+      <div class="ticks"><span>4</span><span>128</span><span>256</span></div>
+      <div class="ctrl-row"><label class="ctrl-label" for="geo-iter">Grover iterations</label><span id="geo-iter-label" class="ctrl-value">0</span></div>
+      <input id="geo-iter" type="range" min="0" max="5" step="1" value="0">
+      <div class="prob-tile"><span class="k">Success probability in the ideal model</span><span id="geo-prob" class="v">25.0%</span></div>
+      <p id="geo-note" class="muted">For one marked item, θ = arcsin(1/√N). Each iteration adds 2θ; stopping near the marked axis gives the highest success chance.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide light" id="s-optimal">
+  <p class="eyebrow">Mathematical Analysis</p>
+  <h1 class="title">The Optimal Number of Iterations</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>The Formula</h3>
+      <p class="serif-eq" style="font-size:clamp(20px,2.2vw,28px); text-align:center;">r ≈ (π/4)·√(N/M)</p>
+      <p>N is the search-space size, M the number of marked states. Round r to the nearest whole number of iterations — overshooting or undershooting by even one round costs real probability, as the previous slide showed.</p>
+    </div>
+    <div class="card fill-maroon" style="flex:1;">
+      <h3>Worked Example: N = 8, M = 1</h3>
+      <p class="serif-eq" style="color:#fff; font-size:20px; text-align:center;">r ≈ (π/4)·√8 ≈ 2.22 → 2 iterations</p>
+      <table class="cmp" style="font-size:14px;">
+        <tr><td>0 iterations</td><td>12.5%</td></tr>
+        <tr><td>1 iteration</td><td>78.1%</td></tr>
+        <tr><td>2 iterations</td><td>94.5%</td></tr>
+        <tr><td>3 iterations</td><td>22.7%</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide light" id="s-multi">
+  <p class="eyebrow">Mathematical Analysis</p>
+  <h1 class="title">Multiple Marked States &amp; Complexity</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>More Than One Answer</h3>
+      <p>The same formula handles M &gt; 1 marked states directly — more marked states means a <b class="accent">larger combined amplitude</b> to amplify, so <b class="accent">fewer</b> iterations are needed: r shrinks as M grows, for the same N.</p>
+      <p class="muted">Example: N = 16 with M = 4 marked states needs about 1 iteration, versus about 3 for M = 1.</p>
+    </div>
+    <div class="card fill-maroon" style="flex:1;">
+      <h3>Query Complexity, Side by Side</h3>
+      <table class="cmp" style="font-size:14px;">
+        <tr><th></th><th>Classical</th><th>Grover</th></tr>
+        <tr><td>Queries needed</td><td>O(N/M)</td><td>O(√(N/M))</td></tr>
+      </table>
+      <p class="muted" style="color:#F0DCDE; margin-top:8px;">This is a proven quadratic speedup in query count — not a claim about total runtime, which depends on how expensive each query actually is. More on that in Part 2.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Part 2 opener -->
+<!-- 16 -->
+<section class="slide light" id="s-app-search">
+  <p class="section-tag">Part 2 · Applications</p>
+  <p class="eyebrow">Where This Shows Up</p>
+  <h1 class="title">Unstructured Database Search</h1>
+  <div class="card"><p>In the oracle query model, a black-box search over N possibilities takes <b class="accent">O(√N)</b> oracle calls with Grover, versus <b class="accent">O(N)</b> classical checks in the worst case.</p></div>
+  <div class="row">
+    <div class="card" style="flex:1;"><h3>Searching a Specific Record</h3><p>Finding one entry in an unsorted list or table — the canonical textbook use case, and the one this entire deck has been simulating.</p></div>
+    <div class="card" style="flex:1;"><h3>A Practical Catch</h3><p>Grover assumes the candidates are already loaded into superposition. For real databases, that <b class="accent">data-loading</b> step can itself be expensive — sometimes expensive enough to erase the advantage.</p></div>
+  </div>
+</section>
+
+<!-- 17 -->
+<section class="slide light" id="s-app-crypto">
+  <p class="eyebrow">Where This Shows Up</p>
+  <h1 class="title">Cryptography &amp; Cybersecurity</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>Brute-Forcing a Symmetric Key</h3>
+      <p>Guessing a symmetric encryption key by trying every possibility is exactly an unstructured search. In an idealized model, Grover reduces the work from about <b class="accent">2ⁿ</b> to about <b class="accent">2ⁿ/²</b> oracle calls.</p>
+    </div>
+    <div class="card fill-maroon" style="flex:1;">
+      <h3>Implications for AES &amp; Post-Quantum Security</h3>
+      <p>This is a major reason <b>AES-128</b> is often considered only "128-bit secure classically, ~64-bit against Grover" — one driver behind recommending <b>AES-256</b> for long-term, quantum-era security.</p>
+      <p class="muted" style="color:#F0DCDE;">Real attacks also pay for building a reversible circuit for the cipher itself, plus hardware and error-correction overhead.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 18 -->
+<section class="slide light" id="s-app-optimization">
+  <p class="eyebrow">Where This Shows Up</p>
+  <h1 class="title">Combinatorial Optimization</h1>
+  <div class="card"><p>Many optimization problems reduce to searching a huge space of candidate configurations for one that satisfies a condition or scores well enough — structurally the same problem Grover solves.</p></div>
+  <div class="row">
+    <div class="card" style="flex:1;"><h3>Candidate Search</h3><p>Each configuration is a candidate; the oracle marks configurations that meet a constraint or exceed a target score.</p></div>
+    <div class="card" style="flex:1;"><h3>Amplitude Amplification as a Subroutine</h3><p>Grover's core mechanism generalizes beyond exact search — it's the basis for broader <b class="accent">amplitude amplification</b> techniques used inside larger optimization algorithms.</p></div>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="slide light" id="s-app-csp">
+  <p class="eyebrow">Where This Shows Up</p>
+  <h1 class="title">Constraint Satisfaction Problems</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>Boolean Satisfiability (SAT)</h3>
+      <p>Given a Boolean formula, find an assignment of true/false to each variable that makes it true. The search space is every possible assignment — exactly the kind of unstructured space Grover searches.</p>
+    </div>
+    <div class="card fill-maroon" style="flex:1;">
+      <h3>Example: Sudoku-Style Puzzles</h3>
+      <p>Encode "is this grid a valid solution?" as the oracle condition, and candidate grids as basis states. A correct oracle marks only the valid completions — the rest of the algorithm is unchanged.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 20 -->
+<section class="slide light" id="s-app-ai">
+  <p class="eyebrow">Where This Shows Up</p>
+  <h1 class="title">Artificial Intelligence &amp; Machine Learning</h1>
+  <div class="card"><p>Grover's algorithm rarely appears as the whole solution — more often, it's a <b class="accent">computational subroutine</b> other algorithms call when they need to search efficiently.</p></div>
+  <div class="row">
+    <div class="card" style="flex:1;"><h3>Candidate Selection</h3><p>Selecting the best candidate from a large hypothesis space, or picking training examples, can be framed as a search the oracle can mark.</p></div>
+    <div class="card" style="flex:1;"><h3>Quantum-Assisted Optimization</h3><p>Grover-style amplitude amplification shows up inside some proposed quantum machine-learning optimization routines — an active, still-maturing research area.</p></div>
+  </div>
+</section>
+
+<!-- 21 -->
+<section class="slide light" id="s-app-sci">
+  <p class="eyebrow">Where This Shows Up</p>
+  <h1 class="title">Scientific &amp; Engineering Applications</h1>
+  <div class="row">
+    <div class="card" style="flex:1;"><h3>Parameter-Space Exploration</h3><p>Searching a large space of simulation parameters for ones that satisfy a target condition — a direct application of unstructured search.</p></div>
+    <div class="card" style="flex:1;"><h3>Design &amp; Materials Search</h3><p>Exploring candidate engineering designs, or molecular and materials configurations, for ones meeting a desired property — proposed research directions, not yet production tools.</p></div>
+  </div>
+</section>
+
+<!-- 22: Limitations, kept dark to signal "pay attention" -->
+<section class="slide dark" id="s-limits">
+  <p class="eyebrow">Read the Speedup Carefully</p>
+  <h1 class="title">Limitations &amp; Practical Considerations</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>The Query Model</h3>
+      <p>The oracle is treated as one operation that marks a candidate. In a real problem, building that reversible oracle can be costly; the query count alone does not give total runtime.</p>
+      <p>Grover helps when the candidates are unstructured and a good candidate can be checked efficiently.</p>
+    </div>
+    <div class="card" style="flex:1;">
+      <h3>Hardware and Outcomes</h3>
+      <p>Each iteration needs coherent gates and controlled operations. Noise and limited circuit depth reduce the success probability, so a small ideal simulation is not evidence of a practical speedup.</p>
+      <p>If the number of marked items is unknown, choosing the iteration count also requires care.</p>
+    </div>
+  </div>
+  <div class="card fill-maroon"><p><b>Takeaway:</b> Grover is a rigorous quadratic improvement in oracle queries under its model. Whether it helps an application depends on the oracle cost, hardware, and the full end-to-end task — including the data-loading problem raised for database search.</p></div>
+</section>
+
+<!-- Part 3 opener -->
+<!-- 23 -->
+<section class="slide light" id="s-qiskit-env">
+  <p class="section-tag">Part 3 · From Concept to Code</p>
+  <p class="eyebrow">The Qiskit Environment</p>
+  <h1 class="title">Mapping Theory to Qiskit</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>What Qiskit Provides</h3>
+      <p>Qiskit is IBM's open-source SDK for building and running quantum circuits. <b class="accent">Qiskit Aer</b> is its simulator — it runs circuits like this one exactly, with no real quantum hardware needed.</p>
+    </div>
+    <div class="col" style="flex:1;">
+      <div class="codecard"><pre><span class="kw">from</span> qiskit <span class="kw">import</span> QuantumCircuit
+<span class="kw">from</span> qiskit.quantum_info <span class="kw">import</span> Statevector
+<span class="kw">from</span> qiskit.primitives <span class="kw">import</span> StatevectorSampler</pre></div>
+      <p class="muted">The same three imports the companion notebook uses — nothing exotic.</p>
+    </div>
+  </div>
+  <table class="cmp">
+    <tr><th>Concept</th><th>Qiskit construct</th></tr>
+    <tr><td>Initialize</td><td><span class="mono">qc.h([...])</span></td></tr>
+    <tr><td>Oracle</td><td><span class="mono">qc.x(...)</span> + <span class="mono">qc.cz(...)</span> + undo the X's</td></tr>
+    <tr><td>Diffuser</td><td><span class="mono">H</span> → <span class="mono">X</span> → <span class="mono">CZ</span> → <span class="mono">X</span> → <span class="mono">H</span></td></tr>
+    <tr><td>Measure</td><td><span class="mono">qc.measure_all()</span></td></tr>
+  </table>
+</section>
+
+<!-- 24 -->
+<section class="slide light" id="s-code-oracle">
+  <p class="eyebrow">From Pipeline to Circuit</p>
+  <h1 class="title">Setup &amp; the Oracle, in Code</h1>
+  <div class="row">
+    <div class="col" style="flex:1;">
+      <div class="codecard"><pre><span class="cm"># N = 4 (2 qubits), one marked box</span>
+qc = QuantumCircuit(2)
+qc.h([0, 1])  <span class="cm"># initialize</span></pre></div>
+      <div class="card"><p>Two qubits, two Hadamards — that's the entire "define the problem and initialize" step for N = 4.</p></div>
+    </div>
+    <div class="col" style="flex:1;">
+      <div class="codecard"><pre><span class="kw">def</span> <span class="fn">oracle</span>(qc, marked):
+    <span class="kw">for</span> qubit, bit <span class="kw">in</span> enumerate(
+        reversed(marked)):
+        <span class="kw">if</span> bit == <span class="st">'0'</span>:
+            qc.x(qubit)
+    qc.cz(0, 1)
+    <span class="kw">for</span> qubit, bit <span class="kw">in</span> enumerate(
+        reversed(marked)):
+        <span class="kw">if</span> bit == <span class="st">'0'</span>:
+            qc.x(qubit)</pre></div>
+      <p class="muted">X gates on the "0" bits, a controlled-Z, then the same X gates undo themselves — this is the exact function the companion notebook runs.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 25 -->
+<section class="slide light" id="s-code-diffuser">
+  <p class="eyebrow">From Pipeline to Circuit</p>
+  <h1 class="title">The Diffuser &amp; the Full Operator</h1>
+  <div class="row">
+    <div class="col" style="flex:1;">
+      <div class="codecard"><pre><span class="kw">def</span> <span class="fn">diffuser</span>(qc):
+    qc.h([0, 1])
+    qc.x([0, 1])
+    qc.cz(0, 1)
+    qc.x([0, 1])
+    qc.h([0, 1])</pre></div>
+      <p class="muted">Hadamards, X gates, a controlled-Z, then both undone in reverse — inversion about the mean, built from five lines.</p>
+    </div>
+    <div class="col" style="flex:1;">
+      <div class="codecard"><pre><span class="kw">def</span> <span class="fn">grover_circuit</span>(marked, iterations):
+    qc = QuantumCircuit(2)
+    qc.h([0, 1])
+    <span class="kw">for</span> _ <span class="kw">in</span> range(iterations):
+        oracle(qc, marked)
+        diffuser(qc)
+    <span class="kw">return</span> qc</pre></div>
+      <p class="muted">Wrap oracle + diffuser into one reusable function — the <span class="mono">iterations</span> argument is exactly the slider from the live slides.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 26 -->
+<section class="slide light" id="s-complete-circuit">
+  <p class="eyebrow">Putting It Together</p>
+  <h1 class="title">The Complete Circuit</h1>
+  <div class="card" style="align-items:center;">
+    <h3 style="align-self:flex-start;">N = 4, One Grover Iteration — Initialize → Oracle → Diffuser → Measure</h3>
+    <img src="full_grover_circuit.png" alt="Complete Grover circuit for N=4: Hadamards, then the oracle gates, then the diffuser gates, then measurement" style="width:100%; max-width:1100px; height:auto;">
+  </div>
+  <div class="card fill-maroon"><p><b>Every Grover circuit has this same shape:</b> initialize, then as many oracle+diffuser pairs as the iteration count calls for, then measure. What changes between problems is only the oracle and the qubit count.</p></div>
+</section>
+
+<!-- 27 -->
+<section class="slide light" id="s-recap">
+  <p class="eyebrow">Recap</p>
+  <h1 class="title">The Whole Algorithm, End to End</h1>
+  <div class="card">
+    <ul>
+      <li><b class="accent">Superposition</b> gives every candidate an equal starting probability</li>
+      <li>The <b class="accent">oracle</b> marks the correct answer with a flipped sign — invisible to measurement, essential for what follows</li>
+      <li>The <b class="accent">diffuser</b> reflects every amplitude about their average, turning that sign flip into a real probability gain</li>
+      <li>One oracle + diffuser pair is one <b class="accent">Grover iteration</b>; the optimal count is r ≈ (π/4)·√(N/M)</li>
+      <li>It's a proven <b class="accent">quadratic</b> speedup in oracle queries — with real applications in search, cryptography, and optimization, and real practical caveats around oracle cost and hardware</li>
+      <li>Every stage maps directly onto a handful of Qiskit gates: <span class="mono">h</span>, <span class="mono">x</span>, <span class="mono">cz</span>, <span class="mono">measure_all</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- 28 -->
+<section class="slide dark" id="s-end" style="align-items:center; justify-content:center; text-align:center;">
+  <div class="card" style="align-items:center; border-color:var(--gold);">
+    <h1 class="title" style="color:#fff;">Notebook Time!</h1>
+    <p class="lede" style="color:var(--ink-on-dark-soft);">Grover's Algorithm — A Beginner's Introduction</p>
+  </div>
+</section>
+
+</div>
+
+<div id="counter">1 / 28</div>
+<div id="chrome">
+  <button class="navbtn" id="prevBtn" aria-label="Previous slide">‹</button>
+  <button class="navbtn" id="fsBtn" aria-label="Toggle fullscreen">⤢</button>
+  <button class="navbtn" id="nextBtn" aria-label="Next slide">›</button>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var LABELS = ['00','01','10','11'];
+
+  /* ---------- Real Grover math for N=4 (stays real-valued throughout) ---------- */
+  function uniform(){ return [0.5, 0.5, 0.5, 0.5]; }
+  function applyOracle(v, markedIndex){
+    var out = v.slice();
+    out[markedIndex] = -out[markedIndex];
+    return out;
+  }
+  function applyDiffuser(v){
+    var mean = (v[0]+v[1]+v[2]+v[3]) / 4;
+    return v.map(function(x){ return 2*mean - x; });
+  }
+  function groverState(markedIndex, iterations){
+    var v = uniform();
+    for (var i = 0; i < iterations; i++){
+      v = applyOracle(v, markedIndex);
+      v = applyDiffuser(v);
+    }
+    return v;
+  }
+  function renderBars(container, amps, markedIndex){
+    container.innerHTML = '';
+    amps.forEach(function(a, i){
+      var prob = a*a;
+      var neg = a < -0.001;
+      var row = document.createElement('div');
+      row.innerHTML = '<div class="ctrl-row"><span class="ctrl-label">Box ' + i + ' (' + LABELS[i] + ')' + (i===markedIndex ? ' — marked' : '') + '</span><span class="ctrl-value">' + (prob*100).toFixed(1) + '%</span></div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + (prob*100).toFixed(1) + '%; background:' + (neg ? 'var(--maroon-fixed)' : 'var(--gold-fixed)') + ';"></div></div>';
+      container.appendChild(row);
+    });
+  }
+
+  /* ---------- Generic box-picker wiring: click a box, recompute via computeFn, render bars ---------- */
+  function wireBoxPicker(boxesId, barsId, computeFn, defaultMarked){
+    var boxesEl = document.getElementById(boxesId);
+    var barsEl = document.getElementById(barsId);
+    if (!boxesEl || !barsEl) return;
+    var boxes = Array.prototype.slice.call(boxesEl.querySelectorAll('.gbox'));
+    var marked = defaultMarked;
+    function render(){ renderBars(barsEl, computeFn(marked), marked); }
+    boxes.forEach(function(b){
+      b.addEventListener('click', function(){
+        boxes.forEach(function(x){ x.classList.remove('marked'); });
+        b.classList.add('marked');
+        marked = parseInt(b.getAttribute('data-i'), 10);
+        render();
+      });
+    });
+    render();
+  }
+
+  /* ---------- Deck navigation ---------- */
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var idx = 0;
+  var progress = document.getElementById('progress');
+  var counter = document.getElementById('counter');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var fsBtn = document.getElementById('fsBtn');
+
+  function go(n){
+    n = Math.max(0, Math.min(slides.length-1, n));
+    slides[idx].classList.remove('active');
+    idx = n;
+    slides[idx].classList.add('active');
+    progress.style.width = (((idx+1)/slides.length)*100).toFixed(2) + '%';
+    counter.textContent = (idx+1) + ' / ' + slides.length;
+    prevBtn.disabled = idx===0;
+    nextBtn.disabled = idx===slides.length-1;
+    document.body.classList.toggle('dark-slide-active', slides[idx].classList.contains('dark'));
+  }
+  prevBtn.addEventListener('click', function(){ go(idx-1); });
+  nextBtn.addEventListener('click', function(){ go(idx+1); });
+  document.addEventListener('keydown', function(e){
+    var tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown'){ go(idx+1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp'){ go(idx-1); e.preventDefault(); }
+    else if (e.key === 'f' || e.key === 'F'){ toggleFullscreen(); }
+  });
+  function toggleFullscreen(){
+    if (!document.fullscreenElement){
+      document.documentElement.requestFullscreen && document.documentElement.requestFullscreen().catch(function(){});
+    } else {
+      document.exitFullscreen && document.exitFullscreen().catch(function(){});
+    }
+  }
+  fsBtn.addEventListener('click', toggleFullscreen);
+  go(0);
+
+  /* ---------- Interactive two-dimensional amplitude-rotation picture ---------- */
+  (function(){
+    var size = document.getElementById('geo-size');
+    var iterations = document.getElementById('geo-iter');
+    if (!size || !iterations) return;
+    var sizeLabel = document.getElementById('geo-size-label');
+    var iterLabel = document.getElementById('geo-iter-label');
+    var probability = document.getElementById('geo-prob');
+    var vector = document.getElementById('geo-vector');
+    var tip = document.getElementById('geo-tip');
+    var angleLabel = document.getElementById('geo-angle');
+    var note = document.getElementById('geo-note');
+    function render(){
+      var n = Number(size.value);
+      var k = Number(iterations.value);
+      var theta = Math.asin(1 / Math.sqrt(n));
+      var angle = (2 * k + 1) * theta;
+      var cx = 50, cy = 220, radius = 174;
+      var x = cx + radius * Math.cos(angle);
+      var y = cy - radius * Math.sin(angle);
+      var success = Math.pow(Math.sin(angle), 2);
+      sizeLabel.textContent = n;
+      iterLabel.textContent = k;
+      probability.textContent = (success * 100).toFixed(1) + '%';
+      vector.setAttribute('x2', x.toFixed(1));
+      vector.setAttribute('y2', y.toFixed(1));
+      tip.setAttribute('cx', x.toFixed(1));
+      tip.setAttribute('cy', y.toFixed(1));
+      angleLabel.textContent = 'θ = ' + theta.toFixed(3);
+      note.textContent = 'For one marked item, θ = arcsin(1/√N) = ' + theta.toFixed(3) + ' rad. After ' + k + ' iteration' + (k===1?'':'s') + ', the angle is (2k+1)θ = ' + angle.toFixed(3) + ' rad.';
+    }
+    size.addEventListener('input', function(){
+      var n = Number(size.value);
+      var theta = Math.asin(1 / Math.sqrt(n));
+      var optimal = Math.max(0, Math.round(Math.PI / (4 * theta) - 0.5));
+      iterations.max = Math.min(30, optimal + 4);
+      if (Number(iterations.value) > Number(iterations.max)) iterations.value = iterations.max;
+      render();
+    });
+    iterations.addEventListener('input', render);
+    render();
+  })();
+
+  /* ---------- Slide 7: oracle demo — pick a box, see the sign flip ---------- */
+  wireBoxPicker('ob-boxes', 'ob-bars', function(marked){ return applyOracle(uniform(), marked); }, 2);
+
+  /* ---------- Slide 9: diffuser demo — pick a box, see oracle+diffuser combined ---------- */
+  wireBoxPicker('db-boxes', 'db-bars', function(marked){ return applyDiffuser(applyOracle(uniform(), marked)); }, 2);
+
+  /* ---------- Slide 11: live amplitude amplification centerpiece ---------- */
+  (function(){
+    var slider = document.getElementById('gv-iter');
+    if (!slider) return;
+    var iterVal = document.getElementById('gv-iter-val');
+    var bars = document.getElementById('gv-bars');
+    var note = document.getElementById('gv-note');
+    var boxes = Array.prototype.slice.call(document.querySelectorAll('#gv-boxes .gbox'));
+    var marked = 2;
+
+    function render(){
+      var n = parseInt(slider.value, 10);
+      iterVal.textContent = n;
+      var v = groverState(marked, n);
+      renderBars(bars, v, marked);
+      var p = (v[marked]*v[marked]*100).toFixed(1);
+      if (n === 0) note.textContent = 'No iterations yet — every box is equally likely.';
+      else note.textContent = 'After ' + n + ' iteration' + (n===1?'':'s') + ', the marked box sits at ' + p + '%.';
+    }
+    slider.addEventListener('input', render);
+    boxes.forEach(function(b){
+      b.addEventListener('click', function(){
+        boxes.forEach(function(x){ x.classList.remove('marked'); });
+        b.classList.add('marked');
+        marked = parseInt(b.getAttribute('data-i'), 10);
+        render();
+      });
+    });
+    render();
+  })();
+
+})();
+</script>

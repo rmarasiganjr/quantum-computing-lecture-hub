@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #fbf9f6;
+  --surface: #ffffff;
+  --surface-2: #f3ece4;
+  --ink: #2b1a1d;
+  --ink-soft: #6b5255;
+  --ink-faint: #7d6164;
+  --maroon: #6a171f;
+  --maroon-deep: #4a0f15;
+  --gold: #c9a227;
+  --ring: #e6dcd3;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', Arial, sans-serif;
+}
+
+a {
+  color: inherit;
+}
