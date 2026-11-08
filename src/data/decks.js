@@ -8,6 +8,14 @@ export const decks = [
     notebook: null,
   },
   {
+    slug: 'shors-algorithm',
+    title: "Shor's Algorithm",
+    subtitle: 'Factoring, Live',
+    description: 'Turning factoring into period-finding — the quantum algorithm behind breaking RSA.',
+    path: '/decks/shor-live/index.html',
+    notebook: '/decks/shor-live/Shors_Algorithm_Factoring_15_Notebook.ipynb',
+  },
+  {
     slug: 'grovers-algorithm',
     title: "Grover's Algorithm",
     subtitle: 'Beginner Introduction',

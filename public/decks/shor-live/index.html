@@ -1,0 +1,662 @@
+<meta charset="utf-8">
+<title>Shor's Algorithm</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* No prefers-color-scheme/data-theme switching: this deck's look is a fixed design
+   (each slide is explicitly .light or .dark), not a theme that should follow the
+   presenter's OS setting — a projector needs to render the same way every time. */
+:root{
+  --bg:#FBF9F6; --surface:#FFFFFF; --surface-2:#F3ECE4; --surface-dark:#241013; --surface-dark-2:#2E1519;
+  --ink:#2B1A1D; --ink-soft:#6B5255; --ink-faint:#7D6164;
+  --ink-on-dark:#F6EDEE; --ink-on-dark-soft:#CBB2B5;
+  --maroon:#6A171F; --maroon-deep:#4A0F15; --gold:#C9A227; --gold-deep:#8A6B1A;
+  --maroon-fixed:#6A171F; --maroon-deep-fixed:#4A0F15; --gold-fixed:#C9A227; --gold-deep-fixed:#8A6B1A;
+  --ring:#E6DCD3; --ring-dark:#4A2A2E;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'IBM Plex Sans', Arial, sans-serif;
+  overflow:hidden; padding:0;
+}
+#deck{ position:relative; width:100%; height:100%; }
+.slide{
+  position:absolute; inset:0; display:none; flex-direction:column;
+  padding:clamp(16px,3vw,52px) clamp(16px,6vw,96px) clamp(44px,5vw,64px);
+  gap:clamp(10px,1.6vw,20px); overflow:auto; scrollbar-width:none;
+}
+.slide::-webkit-scrollbar{ display:none; }
+.slide.active{ display:flex; animation:rise .35s ease both; }
+@media (prefers-reduced-motion: reduce){ .slide.active{ animation:none } }
+@keyframes rise{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
+
+.slide.light{ background:var(--bg); color:var(--ink); }
+.slide.dark{ background:var(--surface-dark); color:var(--ink-on-dark); }
+
+.eyebrow{ font-size:clamp(11px,1.1vw,14px); font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-deep); margin:0; }
+.dark .eyebrow{ color:var(--gold); }
+h1.title{ font-family:'Libre Baskerville', Georgia, serif; font-weight:700; font-size:clamp(28px,4.2vw,52px); line-height:1.14; margin:0; color:var(--maroon); }
+.dark h1.title{ color:#FFFFFF; }
+h1.hero{ font-size:clamp(34px,6vw,84px); }
+p.lede{ font-size:clamp(14px,1.5vw,22px); line-height:1.5; color:var(--ink-soft); max-width:62ch; margin:0; }
+.dark p.lede{ color:var(--ink-on-dark-soft); }
+
+.row{ display:flex; gap:clamp(14px,2vw,32px); flex:1 1 auto; min-height:0; }
+.row.center{ align-items:center; justify-content:center; }
+.row.wrap{ flex-wrap:wrap; }
+.col{ flex:1; display:flex; flex-direction:column; gap:10px; min-width:0; }
+
+.card{
+  background:var(--surface); border:1px solid var(--ring); border-radius:18px;
+  padding:clamp(14px,1.8vw,30px); display:flex; flex-direction:column; gap:11px;
+  box-shadow:0 1px 2px rgba(0,0,0,.04);
+}
+.dark .card{ background:var(--surface-dark-2); border-color:var(--ring-dark); }
+.card.fill-maroon{ background:var(--maroon-fixed); color:#fff; border-color:transparent; }
+.card.fill-maroon h3, .card.fill-maroon b{ color:#fff; }
+.card.fill-maroon p, .card.fill-maroon ul, .card.fill-maroon li{ color:#fff; }
+.card.fill-gold{ background:var(--gold-fixed); color:var(--maroon-deep-fixed); border-color:transparent; }
+.card.fill-gold h3, .card.fill-gold b{ color:var(--maroon-deep-fixed); }
+.card.fill-gold p, .card.fill-gold ul, .card.fill-gold li{ color:var(--maroon-deep-fixed); }
+.card h3{ font-size:clamp(14px,1.4vw,21px); font-weight:700; color:var(--maroon); margin:0; }
+.dark .card h3{ color:var(--gold); }
+.card p{ font-size:clamp(12px,1.2vw,16px); line-height:1.45; color:var(--ink); margin:0; }
+.dark .card p{ color:var(--ink-on-dark); }
+.card ul{ margin:0; padding-left:1.1em; font-size:clamp(12px,1.2vw,16px); line-height:1.5; color:var(--ink); }
+.dark .card ul{ color:var(--ink-on-dark); }
+.card .muted{ color:var(--ink-faint); font-style:italic; font-size:clamp(11px,1.05vw,14px); }
+
+b.accent{ color:var(--maroon); }
+.dark b.accent{ color:var(--gold); }
+.mono{ font-family:'IBM Plex Mono','Courier New',monospace; }
+.serif-eq{ font-family:'Libre Baskerville', Georgia, serif; font-style:italic; font-weight:700; color:var(--maroon); }
+.dark .serif-eq{ color:#fff; }
+
+.pill{ display:inline-flex; align-items:center; background:var(--gold-fixed); color:var(--maroon-deep-fixed); font-weight:700; font-size:clamp(10px,1vw,13px); letter-spacing:.08em; text-transform:uppercase; padding:5px 14px; border-radius:999px; width:fit-content; }
+
+.codecard{ background:var(--surface-dark); border-radius:16px; padding:16px 20px; overflow:auto; flex-shrink:0; }
+.codecard pre{ margin:0; color:#F0E4E6; font-family:'IBM Plex Mono','Courier New',monospace; font-size:clamp(11px,1.05vw,14px); line-height:1.5; white-space:pre-wrap; overflow-wrap:anywhere; }
+.codecard .kw{ color:#E3C465; }
+.codecard .fn{ color:#9FD4C8; }
+.codecard .cm{ color:#8A7174; font-style:italic; }
+.codecard .st{ color:#D9A6AC; }
+
+.pipeline{ display:flex; align-items:stretch; gap:10px; flex-wrap:nowrap; }
+.pstep{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:var(--surface); border:1px solid var(--ring); border-radius:14px; padding:9px 8px; text-align:center; transition:background .2s, color .2s, transform .2s, border-color .2s; font:inherit; cursor:pointer; }
+.pstep:hover{ border-color:var(--maroon-fixed); transform:translateY(-2px); }
+.pstep .n{ font-size:clamp(14px,1.6vw,22px); font-weight:700; color:var(--maroon); }
+.pstep .t{ font-size:clamp(10px,1vw,14px); font-weight:600; }
+.pstep .s{ font-size:clamp(9px,.8vw,12px); font-style:italic; color:var(--ink-faint); }
+.pstep.on{ background:var(--maroon-fixed); border-color:var(--maroon-fixed); color:#fff; transform:scale(1.04); }
+.pstep.on .n{ color:#fff; }
+.pstep.on .s{ color:#F0DCDE; }
+.pstep.classical{ background:var(--maroon-fixed); border-color:var(--maroon-fixed); color:#fff; }
+.pstep.classical .n{ color:#fff; }
+.pstep.classical .s{ color:#F0DCDE; }
+.pstep.quantum{ background:var(--gold-fixed); border-color:var(--gold-fixed); color:var(--maroon-deep-fixed); }
+.pstep.quantum .n{ color:var(--maroon-deep-fixed); }
+.pstep.quantum .s{ color:var(--maroon-deep-fixed); }
+.parrow{ display:flex; align-items:center; color:var(--gold-deep); font-size:20px; flex:0 0 auto; }
+
+.stage-panel{ position:relative; min-height:auto; flex-shrink:0; overflow:hidden; }
+.stage-view{ display:none; }
+.stage-view.shown{ display:flex; flex-direction:column; gap:12px; animation:rise .3s ease both; }
+.hint{ font-size:clamp(11px,1vw,14px); color:var(--ink-soft); text-align:center; margin:0; }
+.dark .hint{ color:var(--ink-on-dark-soft); }
+
+.ctrl-row{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+.ctrl-label{ font-size:clamp(12px,1.1vw,15px); font-weight:600; color:var(--ink-soft); }
+.ctrl-value{ font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; font-size:clamp(14px,1.6vw,20px); font-weight:600; color:var(--maroon); }
+input[type="range"]{ -webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:999px; background:var(--ring); outline:none; margin:2px 0; }
+input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:22px; height:22px; border-radius:50%; background:var(--maroon); border:3px solid var(--surface); box-shadow:0 1px 4px rgba(0,0,0,.35); cursor:pointer; }
+input[type="range"]::-moz-range-thumb{ width:14px; height:14px; border-radius:50%; background:var(--maroon); border:3px solid var(--surface); cursor:pointer; }
+
+.bar-track{ height:8px; border-radius:999px; background:var(--surface-2); overflow:hidden; }
+.bar-fill{ height:100%; border-radius:999px; transition:width .25s ease; }
+
+.prob-tile{ flex:1; background:var(--surface-2); border-radius:14px; padding:12px 16px; display:flex; flex-direction:column; gap:2px; }
+.prob-tile .k{ font-size:clamp(11px,1vw,13px); color:var(--ink-soft); }
+.prob-tile .v{ font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; font-size:clamp(18px,2.2vw,30px); font-weight:600; }
+
+.complexity-chart-card{ flex-shrink:0; overflow:hidden; }
+.complexity-chart{ display:block; width:100%; height:auto; max-height:135px; margin:2px 0; }
+
+table.cmp{ border-collapse:collapse; width:100%; font-size:clamp(12.5px,1.2vw,18px); }
+table.cmp th{ background:var(--maroon); color:#fff; padding:9px 13px; text-align:left; }
+table.cmp td{ padding:9px 13px; border-bottom:1px solid var(--ring); }
+table.cmp tr:nth-child(even) td{ background:var(--surface-2); }
+table.cmp td:first-child{ font-weight:700; color:var(--maroon); }
+
+/* Shor box-picker: clickable boxes representing each valid choice of 'a' */
+.boxrow{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.abox{ flex:1; min-width:46px; max-width:72px; aspect-ratio:1; border-radius:12px; border:2px solid var(--ring); background:var(--surface); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; font:inherit; transition:background .2s, border-color .2s, transform .2s; }
+.abox:hover{ border-color:var(--maroon-fixed); transform:translateY(-2px); }
+.abox .lbl{ font-family:'IBM Plex Mono',monospace; font-size:clamp(14px,1.6vw,19px); font-weight:600; color:var(--maroon); }
+.abox.picked{ background:var(--gold-fixed); border-color:var(--gold-fixed); }
+.abox.picked .lbl{ color:var(--maroon-deep-fixed); }
+
+/* period-sequence strip: each power of a mod N, colored by residue, with period length highlighted */
+.seq-strip{ display:flex; gap:4px; flex-wrap:wrap; }
+.seq-cell{ flex:0 0 auto; min-width:44px; padding:6px 4px; border-radius:8px; background:var(--surface-2); text-align:center; font-family:'IBM Plex Mono',monospace; font-size:clamp(10px,1vw,13px); border:2px solid transparent; }
+.seq-cell .exp{ font-size:9px; color:var(--ink-faint); display:block; }
+.seq-cell.repeat-start{ border-color:var(--gold-fixed); background:var(--gold-fixed); color:var(--maroon-deep-fixed); font-weight:700; }
+
+#progress{ position:fixed; top:0; left:0; height:4px; background:var(--maroon); z-index:50; transition:width .3s ease; }
+.dark-slide-active #progress{ background:var(--gold); }
+#chrome{ position:fixed; right:18px; bottom:16px; display:flex; align-items:center; gap:10px; z-index:50; }
+#counter{ position:fixed; left:18px; bottom:16px; font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--ink-faint); z-index:50; }
+.navbtn{
+  width:42px; height:42px; border-radius:50%; border:1px solid var(--ring); background:var(--surface);
+  color:var(--maroon); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+.navbtn:hover{ background:var(--maroon); color:#fff; }
+.navbtn:disabled{ opacity:.35; cursor:default; }
+.navbtn:disabled:hover{ background:var(--surface); color:var(--maroon); }
+</style>
+
+<div id="progress"></div>
+<div id="deck">
+
+<!-- 1 -->
+<section class="slide dark active" id="s-cover" style="align-items:flex-start; justify-content:center;">
+  <span class="pill">Interactive Guide</span>
+  <h1 class="title hero">Shor's Algorithm</h1>
+  <p class="lede" style="font-size:clamp(15px,1.8vw,24px); max-width:52ch;">Factoring large numbers — the quantum algorithm that breaks the hard problem modern encryption relies on.</p>
+  <p class="lede" style="margin-top:auto; font-size:clamp(12px,1.1vw,15px);">From an exponentially hard classical problem to a polynomial-time quantum one — by turning factoring into finding a repeating pattern.</p>
+</section>
+
+<!-- 2 -->
+<section class="slide light" id="s-problem">
+  <p class="eyebrow">The Problem</p>
+  <h1 class="title">Factoring Large Numbers</h1>
+  <div class="row">
+    <div class="card" style="flex:1">
+      <h3>Easy to Multiply, Hard to Un-Multiply</h3>
+      <p>Multiplying two large primes together is fast. Given only the product, finding those two primes back is believed to be extremely hard — there's no known efficient classical shortcut.</p>
+    </div>
+    <div class="card fill-maroon" style="flex:1">
+      <h3>Why This Matters</h3>
+      <ul>
+        <li>RSA encryption — used to secure web traffic, banking, email — relies entirely on factoring being hard</li>
+        <li>A public key is built from the product of two large primes</li>
+        <li>Breaking it means factoring that product back into its primes</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide light" id="s-faster">
+  <p class="eyebrow">Classical vs. Quantum</p>
+  <h1 class="title">Exponential vs. Polynomial Time</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>The Best Classical Attack</h3>
+      <p>The best known classical algorithm (the <b class="accent">general number field sieve</b>) still takes <b class="accent">sub-exponential</b> time — for the key sizes used today, that's effectively infeasible.</p>
+    </div>
+    <div class="card fill-maroon complexity-chart-card" style="flex:1.2 0 auto;">
+      <h3>Runtime vs. Key Size</h3>
+      <svg class="complexity-chart" viewBox="0 0 390 190" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Log-scale chart: classical factoring time (general number field sieve) rises far faster than quantum (Shor) time as key size grows. A slider moves a marker along both curves.">
+        <g fill="none" stroke="#f0dcde" stroke-opacity=".42" stroke-width="1"><path d="M48 156H360M48 90H360M48 24H360" /><path d="M48 18V162" stroke-opacity=".7" /></g>
+        <g fill="#f0dcde" font-size="10" font-family="IBM Plex Mono,monospace"><text x="42" y="160" text-anchor="end">10⁶</text><text x="42" y="94" text-anchor="end">10²¹</text><text x="42" y="28" text-anchor="end">10³⁶</text><text x="55" y="174" text-anchor="middle">128</text><text x="340" y="174" text-anchor="middle">2,048</text></g>
+        <text x="205" y="186" text-anchor="middle" fill="#f0dcde" font-size="10">Key size, bits</text>
+        <path d="M55 109 L130 92 L215 68 L300 40 L340 24" fill="none" stroke="#fffaf3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M55 145 L130 142 L215 139 L300 136 L340 134" fill="none" stroke="#f2c94c" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+        <g font-size="10" font-weight="700"><text x="255" y="58" fill="#fffaf3">Classical (GNFS)</text><text x="247" y="155" fill="#f2c94c">Quantum (Shor)</text></g>
+        <line id="shorN-guide" x1="55" y1="18" x2="55" y2="162" stroke="#fff" stroke-opacity=".55" stroke-width="1" stroke-dasharray="3 3" />
+        <circle id="shorN-dot-classical" cx="55" cy="109" r="5" fill="#fffaf3" stroke="#4A0F15" stroke-width="1.5" />
+        <circle id="shorN-dot-quantum" cx="55" cy="145" r="5" fill="#f2c94c" stroke="#4A0F15" stroke-width="1.5" />
+      </svg>
+      <div class="ctrl-row"><span class="ctrl-label" style="color:#F0DCDE;">Key size, bits</span><span class="ctrl-value" id="shorN-bits-val" style="color:#fff;">128</span></div>
+      <input type="range" id="shorN-slider" min="128" max="2048" step="1" value="128">
+      <p class="muted" style="color:#F0DCDE; margin:0;">Classical time follows the GNFS asymptotic formula — constants are illustrative; the gap, not the exact seconds, is the point.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide light" id="s-bigidea">
+  <p class="eyebrow">The Big Idea</p>
+  <h1 class="title">Factoring Is Secretly Period-Finding</h1>
+  <div class="card"><p><b class="accent">Shor's real insight:</b> factoring N can be turned into finding the repeating pattern of a sequence — specifically, how often aˣ mod N cycles back to 1, for some number a you pick. Once you know that repeat length (the <b class="accent">period</b>), ordinary arithmetic usually hands you a factor.</p></div>
+  <div class="row">
+    <div class="card" style="flex:1; align-items:center; text-align:center;">
+      <h3>Pick</h3>
+      <p>Choose a number a smaller than N that shares no common factor with it.</p>
+    </div>
+    <div class="card" style="flex:1; align-items:center; text-align:center;">
+      <h3>Find the Period</h3>
+      <p>A quantum computer finds how often aˣ mod N repeats — exponentially faster than checking by hand.</p>
+    </div>
+    <div class="card" style="flex:1; align-items:center; text-align:center;">
+      <h3>Extract a Factor</h3>
+      <p>Plain classical arithmetic (gcd) turns that period into an actual factor of N — most of the time.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5: click-driven pipeline -->
+<section class="slide light" id="s-pipeline">
+  <p class="eyebrow">The Algorithm</p>
+  <h1 class="title">Shor's Algorithm as a Pipeline</h1>
+  <div class="pipeline" id="pipe-shor">
+    <button class="pstep classical" data-stage="pick"><div class="n">1</div><div class="t">Pick a</div><div class="s">classical</div></button>
+    <div class="parrow">→</div>
+    <button class="pstep quantum" data-stage="period"><div class="n">2</div><div class="t">Find the Period</div><div class="s">quantum</div></button>
+    <div class="parrow">→</div>
+    <button class="pstep classical" data-stage="extract"><div class="n">3</div><div class="t">Extract a Factor</div><div class="s">classical</div></button>
+    <div class="parrow">→</div>
+    <button class="pstep classical" data-stage="check"><div class="n">4</div><div class="t">Check It Worked</div><div class="s">classical</div></button>
+  </div>
+  <div class="card stage-panel" id="panel-shor" style="flex:1;">
+    <div class="stage-view" data-view="pick">
+      <h3>1 · Pick a — Classical</h3>
+      <p>Choose a random a with 1 &lt; a &lt; N and gcd(a, N) = 1 (no shared factor with N). If a shares a factor with N by luck, that factor itself solves the problem immediately — this step can get lucky, but usually doesn't.</p>
+    </div>
+    <div class="stage-view" data-view="period">
+      <h3>2 · Find the Period — Quantum</h3>
+      <p>Build a superposition over every possible x, compute aˣ mod N in superposition, then use the <b class="accent">Quantum Fourier Transform</b> to read out the period r — the smallest r &gt; 0 where aʳ mod N = 1. This is the one genuinely quantum step, and where the exponential speedup lives.</p>
+    </div>
+    <div class="stage-view" data-view="extract">
+      <h3>3 · Extract a Factor — Classical</h3>
+      <p>If r is even, compute gcd(a^(r/2) − 1, N) and gcd(a^(r/2) + 1, N) — one of these is often a real, non-trivial factor of N.</p>
+    </div>
+    <div class="stage-view" data-view="check">
+      <h3>4 · Check It Worked — Classical</h3>
+      <p>Sometimes r is odd, or a^(r/2) ≡ −1 (mod N) — both cases fail and hand back nothing useful. When that happens, just pick a new a and try again; success is likely within a few attempts.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5.5: overall pipeline flowchart -->
+<section class="slide light" id="s-flowchart">
+  <p class="eyebrow">The Pipeline</p>
+  <h1 class="title">The Overall Flowchart</h1>
+  <div class="row center">
+    <figure style="margin:0; width:100%; max-width:820px;">
+      <svg viewBox="0 0 860 290" style="width:100%; height:auto;" role="img" aria-label="Flowchart: Pick a leads to the quantum period-finding step, then a decision on whether the period is even and non-trivial. If not, the flow loops back to Pick a. If so, it proceeds to Extract Factors, then the Answer.">
+        <defs>
+          <marker id="fc-arrow-s" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,0 10,5 0,10" fill="#8A6B1A" />
+          </marker>
+          <marker id="fc-arrow-loop-s" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,0 10,5 0,10" fill="#6A171F" />
+          </marker>
+        </defs>
+
+        <line x1="150" y1="120" x2="197" y2="120" stroke="#8A6B1A" stroke-width="2.5" marker-end="url(#fc-arrow-s)" />
+        <line x1="330" y1="120" x2="377" y2="120" stroke="#8A6B1A" stroke-width="2.5" marker-end="url(#fc-arrow-s)" />
+        <line x1="510" y1="120" x2="532" y2="120" stroke="#8A6B1A" stroke-width="2.5" marker-end="url(#fc-arrow-s)" />
+
+        <path d="M610,63 L610,30 L265,30 L265,87" fill="none" stroke="#6A171F" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#fc-arrow-loop-s)" />
+        <text x="437" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="#6A171F">No — pick a new a and retry</text>
+
+        <line x1="610" y1="177" x2="610" y2="207" stroke="#8A6B1A" stroke-width="2.5" marker-end="url(#fc-arrow-s)" />
+        <text x="624" y="196" font-size="13" font-weight="700" fill="#2B1A1D">Yes</text>
+
+        <line x1="675" y1="240" x2="722" y2="240" stroke="#8A6B1A" stroke-width="2.5" marker-end="url(#fc-arrow-s)" />
+
+        <rect x="20" y="90" width="130" height="60" rx="12" fill="#FFFFFF" stroke="#E6DCD3" stroke-width="1.5" />
+        <text x="85" y="114" text-anchor="middle" font-size="14" font-weight="700" fill="#6A171F">1 · Pick a</text>
+        <text x="85" y="132" text-anchor="middle" font-size="11" fill="#6B5255">classical, random</text>
+
+        <rect x="200" y="90" width="130" height="60" rx="12" fill="#FFFFFF" stroke="#E6DCD3" stroke-width="1.5" />
+        <text x="265" y="114" text-anchor="middle" font-size="14" font-weight="700" fill="#6A171F">2 · Find Period</text>
+        <text x="265" y="132" text-anchor="middle" font-size="11" fill="#6B5255">quantum, via QFT</text>
+
+        <rect x="380" y="90" width="130" height="60" rx="12" fill="#FFFFFF" stroke="#E6DCD3" stroke-width="1.5" />
+        <text x="445" y="114" text-anchor="middle" font-size="14" font-weight="700" fill="#6A171F">Check r</text>
+        <text x="445" y="132" text-anchor="middle" font-size="11" fill="#6B5255">even? non-trivial?</text>
+
+        <polygon points="610,65 685,120 610,175 535,120" fill="#C9A227" stroke="#8A6B1A" stroke-width="1.5" />
+        <text x="610" y="113" text-anchor="middle" font-size="12" font-weight="700" fill="#4A0F15">Usable</text>
+        <text x="610" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#4A0F15">period?</text>
+
+        <rect x="545" y="210" width="130" height="60" rx="12" fill="#FFFFFF" stroke="#E6DCD3" stroke-width="1.5" />
+        <text x="610" y="234" text-anchor="middle" font-size="14" font-weight="700" fill="#6A171F">3 · Extract</text>
+        <text x="610" y="252" text-anchor="middle" font-size="11" fill="#6B5255">gcd(a^(r/2)±1, N)</text>
+
+        <rect x="725" y="210" width="115" height="60" rx="12" fill="#6A171F" />
+        <text x="782" y="234" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">Answer</text>
+        <text x="782" y="252" text-anchor="middle" font-size="11" fill="#F0DCDE">factors of N</text>
+      </svg>
+      <figcaption class="muted" style="text-align:center; margin-top:10px;">The loop is the whole algorithm: a failed attempt just means picking a new a and running it again — success is likely within a few tries.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 6: LIVE period-finding demo -->
+<section class="slide light" id="s-period-live">
+  <p class="eyebrow">Live Simulation</p>
+  <h1 class="title">Finding the Period of 7ˣ mod 15</h1>
+  <div class="row">
+    <div class="col" style="flex:0.85;">
+      <div class="card">
+        <h3>Pick a (N = 15)</h3>
+        <div class="boxrow" id="shor-a-boxes">
+          <button class="abox" data-a="2"><span class="lbl">2</span></button>
+          <button class="abox" data-a="4"><span class="lbl">4</span></button>
+          <button class="abox picked" data-a="7"><span class="lbl">7</span></button>
+          <button class="abox" data-a="8"><span class="lbl">8</span></button>
+          <button class="abox" data-a="11"><span class="lbl">11</span></button>
+          <button class="abox" data-a="13"><span class="lbl">13</span></button>
+          <button class="abox" data-a="14"><span class="lbl">14</span></button>
+        </div>
+        <p class="hint">Gold boxes are valid choices — every number from 2–14 that shares no factor with 15.</p>
+      </div>
+      <div class="prob-tile">
+        <span class="k">Period r (first repeat)</span>
+        <span class="v" id="shor-period-val">4</span>
+      </div>
+    </div>
+    <div class="col" style="flex:1;">
+      <div class="card" style="flex:1;">
+        <h3>aˣ mod 15, for x = 0, 1, 2, …</h3>
+        <div class="seq-strip" id="shor-seq-strip"></div>
+        <p class="muted">The gold cell is where the sequence first returns to 1 — the period r.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7: LIVE factor extraction -->
+<section class="slide light" id="s-extract-live">
+  <p class="eyebrow">Live Simulation</p>
+  <h1 class="title">From Period to Factor</h1>
+  <div class="row">
+    <div class="col" style="flex:0.85;">
+      <div class="card">
+        <h3>Pick a (N = 15)</h3>
+        <div class="boxrow" id="shor-a-boxes-2">
+          <button class="abox" data-a="2"><span class="lbl">2</span></button>
+          <button class="abox" data-a="4"><span class="lbl">4</span></button>
+          <button class="abox picked" data-a="7"><span class="lbl">7</span></button>
+          <button class="abox" data-a="8"><span class="lbl">8</span></button>
+          <button class="abox" data-a="11"><span class="lbl">11</span></button>
+          <button class="abox" data-a="13"><span class="lbl">13</span></button>
+          <button class="abox" data-a="14"><span class="lbl">14</span></button>
+        </div>
+      </div>
+      <div class="codecard" style="padding:12px 16px;"><pre id="shor-extract-formula" style="font-size:clamp(12px,1.1vw,14px);">r = 4
+a^(r/2) mod 15 = 7² mod 15 = 4
+gcd(4 − 1, 15) = gcd(3, 15) = 3
+gcd(4 + 1, 15) = gcd(5, 15) = 5</pre></div>
+    </div>
+    <div class="col" style="flex:1;">
+      <div class="card" id="shor-result-card" style="flex:1; align-items:center; justify-content:center; text-align:center;">
+        <h3 id="shor-result-title">15 = 3 × 5</h3>
+        <p id="shor-result-note">A genuine, non-trivial factor pair — found without ever checking 3 or 5 directly.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide light" id="s-worked">
+  <p class="eyebrow">Worked Example</p>
+  <h1 class="title">N = 15, Start to Finish</h1>
+  <table class="cmp">
+    <tr><th>Step</th><th>Result</th></tr>
+    <tr><td>Pick a</td><td>a = 7 (gcd(7, 15) = 1, a valid choice)</td></tr>
+    <tr><td>Find the period</td><td>7¹=7, 7²=4, 7³=13, 7⁴=1 (mod 15) → r = 4</td></tr>
+    <tr><td>Extract a factor</td><td>gcd(7²−1, 15) = 3, gcd(7²+1, 15) = 5</td></tr>
+    <tr><td>Result</td><td>15 = 3 × 5 ✓</td></tr>
+  </table>
+  <p class="lede">The same numbers the live slides and the companion notebook both compute.</p>
+</section>
+
+<!-- 9 -->
+<section class="slide light" id="s-matters">
+  <p class="eyebrow">Why It Matters</p>
+  <h1 class="title">Where This Shows Up</h1>
+  <div class="row">
+    <div class="card" style="flex:1"><h3>Breaking RSA</h3><p>RSA's security rests entirely on factoring being hard. A large enough, fault-tolerant quantum computer running Shor's algorithm would factor RSA keys efficiently — breaking the scheme outright.</p></div>
+    <div class="card" style="flex:1"><h3>Post-Quantum Cryptography</h3><p>This threat is why cryptographers are already standardizing new encryption schemes believed to resist quantum attacks — migrating critical systems well before large quantum computers arrive.</p></div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide dark" id="s-limits">
+  <p class="eyebrow">Read the Speedup Carefully</p>
+  <h1 class="title">Why We Can't Break RSA Today</h1>
+  <div class="row">
+    <div class="card" style="flex:1;">
+      <h3>Qubits and Circuit Depth</h3>
+      <p>Factoring a real 2,048-bit RSA key needs thousands of high-quality, error-corrected logical qubits and very deep circuits — far beyond what any quantum computer has today.</p>
+    </div>
+    <div class="card" style="flex:1;">
+      <h3>What's Actually Been Done</h3>
+      <p>Real hardware demonstrations have factored small numbers like 15 and 21 — proving the algorithm works, not that today's hardware threatens real encryption.</p>
+    </div>
+  </div>
+  <div class="card fill-maroon"><p><b>Takeaway:</b> Shor's algorithm is a proven exponential speedup in theory. The gap between "15 = 3 × 5 on a quantum computer" and "breaking real RSA keys" is still enormous — but it's the reason post-quantum cryptography work is happening now, not later.</p></div>
+</section>
+
+<!-- 11 -->
+<section class="slide light" id="s-recap">
+  <p class="eyebrow">Recap</p>
+  <h1 class="title">The Whole Algorithm, in Four Ideas</h1>
+  <div class="card">
+    <ul>
+      <li>Factoring N is turned into finding the <b class="accent">period</b> of aˣ mod N, for some chosen a</li>
+      <li>Finding that period is the one <b class="accent">quantum</b> step — done via the Quantum Fourier Transform, exponentially faster than any known classical method</li>
+      <li>Ordinary classical arithmetic (gcd) turns the period into an actual <b class="accent">factor</b> of N — most of the time</li>
+      <li>This is why RSA encryption is considered broken <i>in principle</i> by a large enough quantum computer — and why post-quantum cryptography exists</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide dark" id="s-end" style="align-items:center; justify-content:center; text-align:center;">
+  <div class="card" style="align-items:center; border-color:var(--gold);">
+    <h1 class="title" style="color:#fff;">Notebook Time!</h1>
+    <p class="lede" style="color:var(--ink-on-dark-soft);">Shor's Algorithm — Factoring 15, Start to Finish</p>
+  </div>
+</section>
+
+</div>
+
+<div id="counter">1 / 12</div>
+<div id="chrome">
+  <button class="navbtn" id="prevBtn" aria-label="Previous slide">‹</button>
+  <button class="navbtn" id="fsBtn" aria-label="Toggle fullscreen">⤢</button>
+  <button class="navbtn" id="nextBtn" aria-label="Next slide">›</button>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var N = 15;
+
+  function gcd(a, b){ while (b){ var t = b; b = a % b; a = t; } return a; }
+  function modpow(base, exp, mod){
+    var result = 1; base = base % mod;
+    while (exp > 0){
+      if (exp % 2 === 1) result = (result * base) % mod;
+      exp = Math.floor(exp / 2);
+      base = (base * base) % mod;
+    }
+    return result;
+  }
+  function findPeriod(a, n){
+    var seq = [1];
+    for (var x = 1; x <= 12; x++){
+      var v = modpow(a, x, n);
+      seq.push(v);
+      if (v === 1) return { r: x, seq: seq };
+    }
+    return { r: null, seq: seq };
+  }
+
+  /* ---------- Deck navigation ---------- */
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var idx = 0;
+  var progress = document.getElementById('progress');
+  var counter = document.getElementById('counter');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var fsBtn = document.getElementById('fsBtn');
+
+  function go(n){
+    n = Math.max(0, Math.min(slides.length-1, n));
+    slides[idx].classList.remove('active');
+    idx = n;
+    slides[idx].classList.add('active');
+    progress.style.width = (((idx+1)/slides.length)*100).toFixed(2) + '%';
+    counter.textContent = (idx+1) + ' / ' + slides.length;
+    prevBtn.disabled = idx===0;
+    nextBtn.disabled = idx===slides.length-1;
+    document.body.classList.toggle('dark-slide-active', slides[idx].classList.contains('dark'));
+  }
+  prevBtn.addEventListener('click', function(){ go(idx-1); });
+  nextBtn.addEventListener('click', function(){ go(idx+1); });
+  document.addEventListener('keydown', function(e){
+    var tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown'){ go(idx+1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp'){ go(idx-1); e.preventDefault(); }
+    else if (e.key === 'f' || e.key === 'F'){ toggleFullscreen(); }
+  });
+  function toggleFullscreen(){
+    if (!document.fullscreenElement){
+      document.documentElement.requestFullscreen && document.documentElement.requestFullscreen().catch(function(){});
+    } else {
+      document.exitFullscreen && document.exitFullscreen().catch(function(){});
+    }
+  }
+  fsBtn.addEventListener('click', toggleFullscreen);
+  go(0);
+
+  /* ---------- Stage panel: click a pipeline step, see that stage's own explanation ---------- */
+  function wireStagePanel(pipeId, panelId, defaultStage){
+    var pipe = document.getElementById(pipeId);
+    var panel = document.getElementById(panelId);
+    if (!pipe || !panel) return;
+    var steps = Array.prototype.slice.call(pipe.querySelectorAll('.pstep'));
+    var views = Array.prototype.slice.call(panel.querySelectorAll('.stage-view'));
+    function select(stage){
+      steps.forEach(function(s){ s.classList.toggle('on', s.getAttribute('data-stage') === stage); });
+      views.forEach(function(v){ v.classList.toggle('shown', v.getAttribute('data-view') === stage); });
+    }
+    steps.forEach(function(s){ s.addEventListener('click', function(){ select(s.getAttribute('data-stage')); }); });
+    select(defaultStage);
+  }
+  wireStagePanel('pipe-shor', 'panel-shor', 'pick');
+
+  /* ---------- Slide 3: live classical-vs-quantum runtime chart, driven by a key-size slider ---------- */
+  (function(){
+    var slider = document.getElementById('shorN-slider');
+    if (!slider) return;
+    var bitsVal = document.getElementById('shorN-bits-val');
+    var guide = document.getElementById('shorN-guide');
+    var dotC = document.getElementById('shorN-dot-classical');
+    var dotQ = document.getElementById('shorN-dot-quantum');
+    var X0 = 55, X1 = 340, BITS_MIN = 128, BITS_MAX = 2048;
+    var Y0 = 156, LOG_MIN = 6, LOG_MAX = 36;
+    function render(){
+      var bits = parseFloat(slider.value);
+      var L = bits * Math.LN2;
+      var classicalLog10 = (1.923 * Math.pow(L, 1/3) * Math.pow(Math.log(L), 2/3)) / Math.LN10;
+      var quantumLog10 = 3 * Math.log10(bits);
+      var x = X0 + (bits - BITS_MIN) / (BITS_MAX - BITS_MIN) * (X1 - X0);
+      var yC = Y0 - (classicalLog10 - LOG_MIN) / (LOG_MAX - LOG_MIN) * (Y0 - 24);
+      var yQ = Y0 - (quantumLog10 - LOG_MIN) / (LOG_MAX - LOG_MIN) * (Y0 - 24);
+      guide.setAttribute('x1', x.toFixed(1)); guide.setAttribute('x2', x.toFixed(1));
+      dotC.setAttribute('cx', x.toFixed(1)); dotC.setAttribute('cy', yC.toFixed(1));
+      dotQ.setAttribute('cx', x.toFixed(1)); dotQ.setAttribute('cy', yQ.toFixed(1));
+      bitsVal.textContent = Math.round(bits).toLocaleString('en-US');
+    }
+    slider.addEventListener('input', render);
+    render();
+  })();
+
+  /* ---------- Slide 6: live period-finding ---------- */
+  (function(){
+    var boxesEl = document.getElementById('shor-a-boxes');
+    if (!boxesEl) return;
+    var strip = document.getElementById('shor-seq-strip');
+    var periodVal = document.getElementById('shor-period-val');
+    var boxes = Array.prototype.slice.call(boxesEl.querySelectorAll('.abox'));
+
+    function render(a){
+      var result = findPeriod(a, N);
+      periodVal.textContent = result.r !== null ? result.r : '—';
+      strip.innerHTML = '';
+      result.seq.forEach(function(v, x){
+        var cell = document.createElement('div');
+        cell.className = 'seq-cell' + (x === result.r ? ' repeat-start' : '');
+        cell.innerHTML = '<span class="exp">' + a + '^' + x + '</span>' + v;
+        strip.appendChild(cell);
+      });
+    }
+    boxes.forEach(function(b){
+      b.addEventListener('click', function(){
+        boxes.forEach(function(x){ x.classList.remove('picked'); });
+        b.classList.add('picked');
+        render(parseInt(b.getAttribute('data-a'), 10));
+      });
+    });
+    render(7);
+  })();
+
+  /* ---------- Slide 7: live factor extraction ---------- */
+  (function(){
+    var boxesEl = document.getElementById('shor-a-boxes-2');
+    if (!boxesEl) return;
+    var formula = document.getElementById('shor-extract-formula');
+    var resultTitle = document.getElementById('shor-result-title');
+    var resultNote = document.getElementById('shor-result-note');
+    var resultCard = document.getElementById('shor-result-card');
+    var boxes = Array.prototype.slice.call(boxesEl.querySelectorAll('.abox'));
+
+    function render(a){
+      var result = findPeriod(a, N);
+      var r = result.r;
+      if (r === null){
+        formula.textContent = 'No period found within range — try a different a.';
+        resultTitle.textContent = 'No factor found';
+        resultNote.textContent = 'This choice of a did not reveal a period — pick another.';
+        resultCard.classList.remove('fill-maroon');
+        return;
+      }
+      if (r % 2 !== 0){
+        formula.textContent = 'r = ' + r + ' (odd) — this a does not work. Classically, you would just pick a new a.';
+        resultTitle.textContent = 'This attempt fails';
+        resultNote.textContent = 'An odd period gives no usable factor — try a different a.';
+        resultCard.classList.remove('fill-maroon');
+        return;
+      }
+      var half = modpow(a, r / 2, N);
+      var f1 = gcd(half - 1, N);
+      var f2 = gcd(half + 1, N);
+      formula.textContent =
+        'r = ' + r + '\n' +
+        'a^(r/2) mod 15 = ' + a + '^' + (r/2) + ' mod 15 = ' + half + '\n' +
+        'gcd(' + half + ' − 1, 15) = gcd(' + (half-1) + ', 15) = ' + f1 + '\n' +
+        'gcd(' + half + ' + 1, 15) = gcd(' + (half+1) + ', 15) = ' + f2;
+      if (half === N - 1 || f1 === 1 || f1 === N){
+        resultTitle.textContent = 'This attempt fails';
+        resultNote.textContent = 'a^(r/2) ≡ −1 (mod 15) here, so gcd only returns the trivial factors 1 and 15 — try a different a.';
+        resultCard.classList.remove('fill-maroon');
+      } else {
+        resultTitle.textContent = '15 = ' + f1 + ' × ' + f2;
+        resultNote.textContent = 'A genuine, non-trivial factor pair — found without ever checking ' + f1 + ' or ' + f2 + ' directly.';
+        resultCard.classList.add('fill-maroon');
+      }
+    }
+    boxes.forEach(function(b){
+      b.addEventListener('click', function(){
+        boxes.forEach(function(x){ x.classList.remove('picked'); });
+        b.classList.add('picked');
+        render(parseInt(b.getAttribute('data-a'), 10));
+      });
+    });
+    render(7);
+  })();
+
+})();
+</script>
